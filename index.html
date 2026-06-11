@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+        .bg-panel { background-color: #1e293b; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+    
+    <div id="toast" class="fixed top-5 right-5 bg-emerald-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-x-full opacity-0 z-50">
+        <span id="toast-message">Успішно!</span>
+    </div>
+
+    <div class="w-full max-w-6xl flex flex-col gap-6">
+        <header class="flex justify-between items-center bg-panel p-6 rounded-2xl shadow-lg border border-slate-700">
+            <h1 class="text-2xl font-bold text-indigo-400"><i class="fas fa-wallet mr-2"></i>FinanceBuddy</h1>
+            <div class="text-slate-400">Вітаємо!</div>
+        </header>
+
+        <main class="flex flex-col lg:flex-row gap-6">
+            
+            <div class="flex flex-col gap-6 w-full lg:w-2/3">
+                
+                <div class="bg-panel p-6 rounded-2xl shadow border border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-slate-400 mb-1">Поточний баланс</h2>
+                        <div id="total-balance" class="text-4xl font-bold">₴0.00</div>
+                    </div>
+                    <div class="flex gap-4 w-full sm:w-auto">
+                        <div class="bg-emerald-500/10 text-emerald-400 p-3 rounded-xl flex-1 text-center min-w-[100px]">
+                            <div class="text-sm">Доходи</div>
+                            <div id="total-income" class="font-bold">+₴0.00</div>
+                        </div>
+                        <div class="bg-rose-500/10 text-rose-400 p-3 rounded-xl flex-1 text-center min-w-[100px]">
+                            <div class="text-sm">Витрати</div>
+                            <div id="total-expense" class="font-bold">-₴0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-panel p-6 rounded-2xl shadow border border-slate-700">
+                    <h2 class="text-xl font-bold mb-4">Додати транзакцію</h2>
+                    <form id="transaction-form" class="flex flex-col sm:flex-row gap-4">
+                        <input type="text" id="t-name" placeholder="Назва (напр. Продукти)" class="flex-1 bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500" required>
+                        <input type="number" id="t-amount" placeholder="Сума" step="0.01" class="w-full sm:w-32 bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500" required>
+                        <select id="t-type" class="w-full sm:w-32 bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500">
+                            <option value="expense">Витрата</option>
+                            <option value="income">Дохід</option>
+                        </select>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">Додати</button>
+                    </form>
+                </div>
+
+                <div class="bg-panel p-6 rounded-2xl shadow border border-slate-700">
+                    <h2 class="text-xl font-bold mb-4">Останні транзакції</h2>
+                    <div id="transactions-list" class="flex flex-col gap-3">
+                        </div>
+                </div>
+
+            </div>
+
+            <div class="flex flex-col gap-6 w-full lg:w-1/3">
+                
+                <div class="bg-panel p-6 rounded-2xl shadow border border-slate-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Моя ціль</h2>
+                    </div>
+
+                    <div id="empty-goal-state" class="text-center py-6">
+                        <div class="bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600">
+                            <i class="fas fa-clock text-2xl text-slate-400"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2">У вас ще немає активної фінансової цілі</h3>
+                        <p class="text-slate-400 text-sm mb-6">Встановіть ціль, щоб відстежувати свій прогрес.</p>
+                    </div>
+
+                    <div id="active-goal-state" class="hidden">
+                        <div class="flex justify-between mb-2">
+                            <span id="display-goal-name" class="text-slate-300 font-medium">Назва цілі</span>
+                            <span class="text-slate-400 text-sm">Залишилося</span>
+                        </div>
+                        <div class="flex justify-between items-end mb-4">
+                            <div>
+                                <span class="text-sm text-slate-400">Прогрес: </span>
+                                <span id="goal-progress-percent" class="font-bold">0%</span>
+                            </div>
+                            <div id="goal-remaining" class="text-2xl font-bold text-indigo-400">₴0.00</div>
+                        </div>
+                        
+                        <div class="w-full bg-slate-800 rounded-full h-3 mb-2 border border-slate-700 overflow-hidden">
+                            <div id="goal-progress-bar" class="bg-indigo-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="flex justify-end mb-6">
+                            <span class="text-sm text-slate-400">Ціль: <span id="display-goal-amount">₴0.00</span></span>
+                        </div>
+                        
+                        <button id="delete-goal-btn" class="w-full border border-rose-500/50 text-rose-400 hover:bg-rose-500 hover:text-white py-2 rounded-lg transition-colors text-sm">Прибрати ціль</button>
+                    </div>
+
+                    <hr class="border-slate-700 my-6">
+
+                    <h3 class="font-bold mb-4">Змінити ціль</h3>
+                    <form id="goal-form" class="flex flex-col gap-4">
+                        <div>
+                            <label class="text-sm text-slate-400 block mb-1">Назва цілі</label>
+                            <input type="text" id="g-name" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500" required>
+                        </div>
+                        <div>
+                            <label class="text-sm text-slate-400 block mb-1">Сума цілі (₴)</label>
+                            <input type="number" id="g-amount" step="1" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:outline-none focus:border-indigo-500" required>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition-colors mt-2">Зберегти ціль</button>
+                    </form>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
