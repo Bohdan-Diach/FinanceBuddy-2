@@ -17,6 +17,19 @@
         /* Ховаємо системний скролбар для краси на мобільному */
         .custom-scrollbar::-webkit-scrollbar { display: none; }
         .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* МАГІЯ ТЕМНОЇ ТЕМИ */
+        html.dark body { background-color: #0f172a; color: #f8fafc; }
+        html.dark .bento-card { background-color: #1e293b; color: #f8fafc; border: 1px solid #334155; box-shadow: none; }
+        html.dark .bento-card h2, html.dark .bento-card h3, html.dark .bento-card h4 { color: #f8fafc; }
+        html.dark .sidebar { background-color: #1e293b; border-right: 1px solid #334155; }
+        html.dark input, html.dark select { background-color: #334155; color: #f8fafc; border-color: #475569; }
+        html.dark .bg-slate-50 { background-color: #334155; }
+        html.dark nav.fixed { background-color: #1e293b; border-top: 1px solid #334155; }
+        html.dark .text-slate-800 { color: #f8fafc; }
+        html.dark .text-slate-500 { color: #94a3b8; }
+        html.dark .text-slate-400 { color: #64748b; }
+        html.dark .bg-white { background-color: #1e293b; }
     </style>
 </head>
 <body class="flex min-h-screen text-slate-800 p-4 md:p-6 gap-6 pb-24 md:pb-6">
