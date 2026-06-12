@@ -8,8 +8,11 @@ const CURRENCY = userProfile.currency || '₴';
 let currentChart = null; 
 
 // Застосовуємо тему
-if (userProfile.theme === 'dark') document.documentElement.classList.add('dark');
-else document.documentElement.classList.remove('dark');
+if (userProfile.theme === 'dark') {
+    document.documentElement.classList.add('dark');
+} else {
+    document.documentElement.classList.remove('dark');
+}
 
 // ================= КАТЕГОРІЇ =================
 const categoryConfig = {
@@ -125,7 +128,6 @@ function updateDashboardUI() {
         else expense += t.amount; 
     });
 
-    // ОНОВЛЕННЯ 1: Останні операції (Очищено від dark: класів)
     if(list) {
         const recentTransactions = transactions.slice(0, 4);
         if (recentTransactions.length === 0) {
@@ -172,7 +174,6 @@ function updateDashboardUI() {
         percentText.textContent = `${percent}%`;
     }
 
-    // ОНОВЛЕННЯ 2: На мрію (Очищено від dark: класів)
     const goalBox = document.getElementById('goal-ui-content');
     if (goalBox) {
         if (!userGoal) goalBox.innerHTML = `<div class="text-center opacity-50 h-full flex flex-col items-center justify-center"><i class="fas fa-crosshairs text-3xl mb-2"></i><p class="text-sm font-medium">Ціль не встановлено</p></div>`;
@@ -205,7 +206,8 @@ function updateDashboardUI() {
         }
     }
 }
-// ================= 2. СТАТИСТИКА =================
+
+// ================= СТАТИСТИКА =================
 function initStatistics() {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
@@ -223,7 +225,6 @@ function renderChart(timeFilter) {
     const now = Date.now();
     const DAY_IN_MS = 24 * 60 * 60 * 1000;
     
-    // Беремо ВСІ транзакції для періоду (і доходи, і витрати)
     let filtered = transactions;
 
     if (timeFilter === 'day') filtered = filtered.filter(t => (now - t.id) <= DAY_IN_MS);
@@ -235,7 +236,6 @@ function renderChart(timeFilter) {
     let totalExpense = 0;
     let totalIncome = 0;
 
-    // Рахуємо і доходи, і витрати
     filtered.forEach(t => { 
         if (t.type === 'expense') {
             expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount; 
@@ -245,7 +245,6 @@ function renderChart(timeFilter) {
         }
     });
 
-    // Оновлюємо 3 верхні міні-картки
     if(document.getElementById('stat-period-income')) document.getElementById('stat-period-income').textContent = `+${CURRENCY}${formatMoney(totalIncome)}`;
     if(document.getElementById('stat-period-expense')) document.getElementById('stat-period-expense').textContent = `-${CURRENCY}${formatMoney(totalExpense)}`;
     
@@ -256,20 +255,18 @@ function renderChart(timeFilter) {
         flowEl.className = `text-2xl font-bold ${netFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
     }
 
-    // Оновлюємо цифру на самому графіку
-    document.getElementById('total-expense-stat').textContent = `${CURRENCY}${formatMoney(totalExpense)}`;
+    const expStatEl = document.getElementById('total-expense-stat');
+    if(expStatEl) expStatEl.textContent = `${CURRENCY}${formatMoney(totalExpense)}`;
     
     const hint = document.getElementById('empty-state-hint');
     if (totalExpense === 0) { if(hint) hint.classList.remove('hidden'); } else { if(hint) hint.classList.add('hidden'); }
     
-    // Заповнюємо список Деталізації (справа)
     const catListEl = document.getElementById('category-details-list');
     if (catListEl) {
         catListEl.innerHTML = '';
-        // Сортуємо від найбільшої витрати до найменшої
         const sortedCats = Object.entries(expensesByCat).sort((a, b) => b[1] - a[1]);
         
-if (sortedCats.length === 0) {
+        if (sortedCats.length === 0) {
             catListEl.innerHTML = '<div class="text-center text-slate-400 py-10 text-sm">Немає витрат за цей період</div>';
         } else {
             sortedCats.forEach(([cat, amount]) => {
@@ -291,10 +288,10 @@ if (sortedCats.length === 0) {
                 `;
             });
         }
+    } // <--- ОСЬ ЦЯ ДУЖКА БУЛА ЗАГУБЛЕНА РАНІШЕ!
 
     generateSmartAdvice(expensesByCat, totalExpense);
 
-    // Малюємо графік
     const catKeys = Object.keys(expensesByCat);
     const labels = catKeys.map(k => categoryConfig[k].name);
     const emojis = catKeys.map(k => categoryConfig[k].emoji); 
@@ -302,20 +299,23 @@ if (sortedCats.length === 0) {
     const categoryColors = { 'products': '#3b82f6', 'transport': '#f43f5e', 'utilities': '#f59e0b', 'clothing': '#ec4899', 'entertainment': '#a855f7', 'shopping': '#6366f1', 'other': '#64748b' };
     const bgColors = catKeys.map(k => categoryColors[k] || '#10b981');
 
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
-    if (currentChart) currentChart.destroy();
-    currentChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: labels, datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 15 : 0 }] },
-        options: {
-            layout: { padding: 25 }, responsive: true, maintainAspectRatio: false, cutout: '75%',
-            plugins: {
-                legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 24, usePointStyle: true, pointStyle: 'circle' } },
-                tooltip: { enabled: data.length > 0, backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
-                datalabels: { color: '#ffffff', font: { family: 'Inter', size: 14, weight: 'bold' }, formatter: (value, context) => { if (totalExpense === 0) return null; const percent = Math.round((value / totalExpense) * 100); if (percent < 5) return null; return `${emojis[context.dataIndex]} ${percent}%`; } }
+    const chartEl = document.getElementById('analyticsChart');
+    if (chartEl) {
+        const ctx = chartEl.getContext('2d');
+        if (currentChart) currentChart.destroy();
+        currentChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: labels, datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 15 : 0 }] },
+            options: {
+                layout: { padding: 25 }, responsive: true, maintainAspectRatio: false, cutout: '75%',
+                plugins: {
+                    legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 24, usePointStyle: true, pointStyle: 'circle' } },
+                    tooltip: { enabled: data.length > 0, backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
+                    datalabels: { color: '#ffffff', font: { family: 'Inter', size: 14, weight: 'bold' }, formatter: (value, context) => { if (totalExpense === 0) return null; const percent = Math.round((value / totalExpense) * 100); if (percent < 5) return null; return `${emojis[context.dataIndex]} ${percent}%`; } }
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 function generateSmartAdvice(expenses, total) {
@@ -328,6 +328,59 @@ function generateSmartAdvice(expenses, total) {
     const tips = { 'products': "🛒 Порада: Складання списку економить до 20% бюджету!", 'transport': "🚗 Порада: Можливо, варто розглянути альтернативні маршрути або частіше гуляти?", 'utilities': "💡 Порада: Зверніть увагу на енергозберігаючі прилади.", 'clothing': "👕 Порада: 'Правило 24 годин': перед покупкою почекайте добу.", 'entertainment': "🎬 Порада: Шукайте також безкоштовні івенти у вашому місті.", 'shopping': "🛍️ Порада: Емоційні покупки — головний ворог бюджету.", 'other': "📦 Порада: Деталізуйте ці витрати, щоб краще розуміти бюджет." };
     adviceEl.innerHTML = advice + (tips[maxCat] || "Продовжуйте стежити за своїми витратами! 🌟");
 }
+
+// ================= ІСТОРІЯ =================
+function initHistory() {
+    const searchInput = document.getElementById('search-input');
+    const typeButtons = document.querySelectorAll('.type-filter');
+    let currentTypeFilter = 'all'; let searchQuery = '';
+
+    function renderHistory() {
+        const list = document.getElementById('full-history-list');
+        if(!list) return; list.innerHTML = '';
+        let filtered = transactions.filter(t => {
+            const matchType = currentTypeFilter === 'all' || t.type === currentTypeFilter;
+            const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || categoryConfig[t.category].name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchType && matchSearch;
+        });
+
+        if (filtered.length === 0) { list.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-slate-400"><i class="fas fa-search text-4xl mb-4 opacity-50"></i><p class="font-medium">Записів не знайдено</p></div>`; return; }
+
+        filtered.forEach(t => {
+            const conf = categoryConfig[t.category];
+            const sign = t.type === 'income' ? '+' : '-';
+            const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
+            
+            list.innerHTML += `
+                <div class="flex justify-between items-center p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100 group">
+                    <div class="flex items-center gap-5">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} shadow-inner"><i class="fas ${conf.icon} text-lg"></i></div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-base">${t.name}</div>
+                            <div class="text-xs text-slate-400 font-medium mt-0.5">${conf.name} • ${t.date}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <div class="font-bold text-lg tracking-tight ${amountColor}">${sign}${CURRENCY}${formatMoney(t.amount)}</div>
+                        <button onclick="deleteTransaction(${t.id})" class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white"><i class="fas fa-trash text-sm"></i></button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    if(searchInput) searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; renderHistory(); });
+    typeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            typeButtons.forEach(b => { b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800', 'active'); b.classList.add('text-slate-400'); });
+            e.target.classList.add('bg-white', 'shadow-sm', 'text-slate-800', 'active'); e.target.classList.remove('text-slate-400');
+            currentTypeFilter = e.target.getAttribute('data-type'); renderHistory();
+        });
+    });
+    renderHistory();
+}
+
+function deleteTransaction(id) { transactions = transactions.filter(t => t.id !== id); localStorage.setItem('fb_bento_data', JSON.stringify(transactions)); if(document.getElementById('full-history-list')) initHistory(); if(document.getElementById('transaction-form')) updateDashboardUI(); }
+
 // ================= ЛІМІТИ =================
 function initLimits() {
     const form = document.getElementById('limit-form');
@@ -379,7 +432,6 @@ function deleteLimit(category) { delete userLimits[category]; localStorage.setIt
 
 // ================= НАЛАШТУВАННЯ =================
 function initSettings() {
-    // ПРОФІЛЬ
     document.getElementById('user-name-input').value = userProfile.name;
     document.getElementById('user-email-input').value = userProfile.email;
 
@@ -392,7 +444,6 @@ function initSettings() {
         alert("Профіль успішно оновлено!");
     });
 
-    // ІНТЕРФЕЙС
     const currencyInput = document.getElementById('user-currency-input');
     const themeInput = document.getElementById('user-theme-input');
     
@@ -411,7 +462,6 @@ function initSettings() {
         });
     }
 
-    // ОЧИЩЕННЯ
     const clearBtn = document.getElementById('clear-data-btn');
     if(clearBtn) {
         clearBtn.addEventListener('click', () => {
