@@ -117,32 +117,126 @@ function updateDashboardUI() {
 }
 
 /* ================= ЛОГІКА СТОРІНКИ СТАТИСТИКИ ================= */
+let currentChart = null; // Змінна для зберігання графіка, щоб ми могли його перемальовувати
+
 function initStatistics() {
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
-    const expensesByCat = {};
-    let totalExpense = 0;
+    // 1. Знаходимо всі кнопки фільтрів
+    const buttons = document.querySelectorAll('.filter-btn');
     
-    transactions.forEach(t => {
-        if (t.type === 'expense') {
-            expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount;
-            totalExpense += t.amount;
-        }
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Знімаємо зелений колір з усіх кнопок
+            buttons.forEach(b => {
+                b.classList.remove('bg-emerald-500', 'shadow-lg');
+                b.classList.add('bg-white/10');
+            });
+            // Робимо натиснуту кнопку зеленою
+            e.target.classList.remove('bg-white/10');
+            e.target.classList.add('bg-emerald-500', 'shadow-lg');
+
+            // Отримуємо тип фільтра (day, week, month, year, all) і малюємо графік
+            const filterType = e.target.getAttribute('data-filter');
+            renderChart(filterType);
+        });
     });
 
+    // 2. Малюємо графік за замовчуванням ("Всі дані") при завантаженні
+    renderChart('all');
+}
+
+function renderChart(timeFilter) {
+    const now = Date.now();
+    const DAY_IN_MS = 24 * 60 * 60 * 1000; // Кількість мілісекунд у дні
+
+    // Відфільтровуємо лише витрати
+    let filteredTransactions = transactions.filter(t => t.type === 'expense');
+
+    // Відрізаємо старі транзакції залежно від обраного фільтра
+    if (timeFilter === 'day') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS);
+    } else if (timeFilter === 'week') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 7);
+    } else if (timeFilter === 'month') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 30);
+    } else if (timeFilter === 'year') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 365);
+    }
+
+    const expensesByCat = {};
+    let totalExpense = 0;
+
+    // Рахуємо суми по категоріях для відфільтрованих даних
+    filteredTransactions.forEach(t => {
+        expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount;
+        totalExpense += t.amount;
+    });
+
+    // Оновлюємо велику цифру на екрані
     document.getElementById('total-expense-stat').textContent = `₴${formatMoney(totalExpense)}`;
 
+    // Підготовка даних для Chart.js
     const labels = Object.keys(expensesByCat).map(k => categoryConfig[k].name);
     const data = Object.values(expensesByCat);
-    const maxVal = Math.max(...(data.length ? data : [0]));
-    const bgColors = data.map(val => val === maxVal ? '#ff5722' : '#10b981');
+    
+    // Кастомні кольори для рухливого графіка
+    const categoryColors = {
+        'products': '#10b981',      // Смарагдовий
+        'transport': '#ff5722',     // Помаранчевий
+        'entertainment': '#8b5cf6', // Фіолетовий
+        'shopping': '#3b82f6',      // Синій
+        'other': '#94a3b8'          // Сірий
+    };
+    const bgColors = Object.keys(expensesByCat).map(k => categoryColors[k] || '#10b981');
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: { labels: labels, datasets: [{ data: data, backgroundColor: bgColors, borderRadius: 8 }] },
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+
+    // Якщо графік вже існує — знищуємо його перед тим як намалювати новий
+    if (currentChart) {
+        currentChart.destroy();
+    }
+
+    // Створюємо нову рухливу кругову діаграму (Doughnut)
+    currentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                // Якщо даних немає, малюємо сіре пусте кільце
+                data: data.length ? data : [1],
+                backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'],
+                borderWidth: 0,
+                hoverOffset: data.length ? 15 : 0 // Ефект висування при наведенні
+            }]
+        },
         options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { display: false }, x: { grid: { display: false } } }
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%', // Робить графік тонким кільцем
+            plugins: {
+                legend: {
+                    position: 'right', // Легенда справа
+                    labels: { 
+                        color: 'rgba(255, 255, 255, 0.8)', 
+                        font: { family: 'Inter', size: 14 }, 
+                        padding: 24, 
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 14, family: 'Inter' },
+                    bodyFont: { size: 16, family: 'Inter', weight: 'bold' },
+                    padding: 16,
+                    cornerRadius: 12,
+                    callbacks: {
+                        label: function(context) {
+                            if (!data.length) return ' Немає даних за цей період';
+                            return ` ₴${formatMoney(context.raw)}`;
+                        }
+                    }
+                }
+            }
         }
     });
 }
