@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('analyticsChart')) {
         initStatistics();
     }
+    {if (document.getElementById('full-history-list')) initHistory();}
 });
 
 /* ================= ЛОГІКА ГОЛОВНОЇ СТОРІНКИ ================= */
@@ -117,126 +118,87 @@ function updateDashboardUI() {
 }
 
 /* ================= ЛОГІКА СТОРІНКИ СТАТИСТИКИ ================= */
-let currentChart = null; // Змінна для зберігання графіка, щоб ми могли його перемальовувати
+/* ================= ЛОГІКА СТОРІНКИ ІСТОРІЇ ================= */
+function initHistory() {
+    const searchInput = document.getElementById('search-input');
+    const typeButtons = document.querySelectorAll('.type-filter');
+    let currentTypeFilter = 'all';
+    let searchQuery = '';
 
-function initStatistics() {
-    // 1. Знаходимо всі кнопки фільтрів
-    const buttons = document.querySelectorAll('.filter-btn');
-    
-    buttons.forEach(btn => {
+    // Функція рендеру списку з урахуванням фільтрів
+    function renderHistory() {
+        const list = document.getElementById('full-history-list');
+        list.innerHTML = '';
+
+        // Фільтруємо масив транзакцій
+        let filtered = transactions.filter(t => {
+            const matchType = currentTypeFilter === 'all' || t.type === currentTypeFilter;
+            const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                categoryConfig[t.category].name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchType && matchSearch;
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+                    <i class="fas fa-search text-4xl mb-4 opacity-50"></i>
+                    <p class="font-medium">Записів не знайдено</p>
+                </div>`;
+            return;
+        }
+
+        // Відмальовуємо красиві рядки
+        filtered.forEach(t => {
+            const conf = categoryConfig[t.category];
+            const isIncome = t.type === 'income';
+            const sign = isIncome ? '+' : '-';
+            const amountColor = isIncome ? 'text-emerald-600' : 'text-slate-800';
+
+            const item = document.createElement('div');
+            item.className = 'flex justify-between items-center p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100 group';
+            item.innerHTML = `
+                <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} shadow-inner">
+                        <i class="fas ${conf.icon} text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-slate-800 text-base">${t.name}</div>
+                        <div class="text-xs text-slate-400 font-medium mt-0.5">${conf.name} • ${t.date}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="font-bold text-lg tracking-tight ${amountColor}">${sign}₴${formatMoney(t.amount)}</div>
+                    <button onclick="deleteTransaction(${t.id}); setTimeout(()=>renderHistory(), 10);" class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white">
+                        <i class="fas fa-trash text-sm"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    // Слухач для живого пошуку
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderHistory();
+    });
+
+    // Слухачі для кнопок-фільтрів (Всі / Доходи / Витрати)
+    typeButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Знімаємо зелений колір з усіх кнопок
-            buttons.forEach(b => {
-                b.classList.remove('bg-emerald-500', 'shadow-lg');
-                b.classList.add('bg-white/10');
+            typeButtons.forEach(b => {
+                b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800');
+                b.classList.add('text-slate-400');
+                b.classList.remove('active');
             });
-            // Робимо натиснуту кнопку зеленою
-            e.target.classList.remove('bg-white/10');
-            e.target.classList.add('bg-emerald-500', 'shadow-lg');
-
-            // Отримуємо тип фільтра (day, week, month, year, all) і малюємо графік
-            const filterType = e.target.getAttribute('data-filter');
-            renderChart(filterType);
+            e.target.classList.add('bg-white', 'shadow-sm', 'text-slate-800', 'active');
+            e.target.classList.remove('text-slate-400');
+            
+            currentTypeFilter = e.target.getAttribute('data-type');
+            renderHistory();
         });
     });
 
-    // 2. Малюємо графік за замовчуванням ("Всі дані") при завантаженні
-    renderChart('all');
-}
-
-function renderChart(timeFilter) {
-    const now = Date.now();
-    const DAY_IN_MS = 24 * 60 * 60 * 1000; // Кількість мілісекунд у дні
-
-    // Відфільтровуємо лише витрати
-    let filteredTransactions = transactions.filter(t => t.type === 'expense');
-
-    // Відрізаємо старі транзакції залежно від обраного фільтра
-    if (timeFilter === 'day') {
-        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS);
-    } else if (timeFilter === 'week') {
-        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 7);
-    } else if (timeFilter === 'month') {
-        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 30);
-    } else if (timeFilter === 'year') {
-        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 365);
-    }
-
-    const expensesByCat = {};
-    let totalExpense = 0;
-
-    // Рахуємо суми по категоріях для відфільтрованих даних
-    filteredTransactions.forEach(t => {
-        expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount;
-        totalExpense += t.amount;
-    });
-
-    // Оновлюємо велику цифру на екрані
-    document.getElementById('total-expense-stat').textContent = `₴${formatMoney(totalExpense)}`;
-
-    // Підготовка даних для Chart.js
-    const labels = Object.keys(expensesByCat).map(k => categoryConfig[k].name);
-    const data = Object.values(expensesByCat);
-    
-    // Кастомні кольори для рухливого графіка
-    const categoryColors = {
-        'products': '#10b981',      // Смарагдовий
-        'transport': '#ff5722',     // Помаранчевий
-        'entertainment': '#8b5cf6', // Фіолетовий
-        'shopping': '#3b82f6',      // Синій
-        'other': '#94a3b8'          // Сірий
-    };
-    const bgColors = Object.keys(expensesByCat).map(k => categoryColors[k] || '#10b981');
-
-    const ctx = document.getElementById('analyticsChart').getContext('2d');
-
-    // Якщо графік вже існує — знищуємо його перед тим як намалювати новий
-    if (currentChart) {
-        currentChart.destroy();
-    }
-
-    // Створюємо нову рухливу кругову діаграму (Doughnut)
-    currentChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                // Якщо даних немає, малюємо сіре пусте кільце
-                data: data.length ? data : [1],
-                backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'],
-                borderWidth: 0,
-                hoverOffset: data.length ? 15 : 0 // Ефект висування при наведенні
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '75%', // Робить графік тонким кільцем
-            plugins: {
-                legend: {
-                    position: 'right', // Легенда справа
-                    labels: { 
-                        color: 'rgba(255, 255, 255, 0.8)', 
-                        font: { family: 'Inter', size: 14 }, 
-                        padding: 24, 
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                    titleFont: { size: 14, family: 'Inter' },
-                    bodyFont: { size: 16, family: 'Inter', weight: 'bold' },
-                    padding: 16,
-                    cornerRadius: 12,
-                    callbacks: {
-                        label: function(context) {
-                            if (!data.length) return ' Немає даних за цей період';
-                            return ` ₴${formatMoney(context.raw)}`;
-                        }
-                    }
-                }
-            }
-        }
-    });
+    // Перший запуск
+    renderHistory();
 }
