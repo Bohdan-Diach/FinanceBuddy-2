@@ -15,13 +15,10 @@ function formatMoney(amount) {
 
 // Запуск потрібних функцій залежно від сторінки
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('transaction-form')) {
-        initDashboard();
-    }
-    if (document.getElementById('analyticsChart')) {
-        initStatistics();
-    }
-    {if (document.getElementById('full-history-list')) initHistory();}
+    if (document.getElementById('transaction-form')) initDashboard();
+    if (document.getElementById('analyticsChart')) initStatistics();
+    // Додай цей рядок:
+    if (document.getElementById('full-history-list')) initHistory(); 
 });
 
 /* ================= ЛОГІКА ГОЛОВНОЇ СТОРІНКИ ================= */
