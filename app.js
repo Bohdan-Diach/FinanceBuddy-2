@@ -91,7 +91,7 @@ function initDashboard() {
     document.getElementById('transaction-form').addEventListener('submit', function(e) {
         e.preventDefault();
         let name = document.getElementById('t-name').value;
-       const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
+        const amount = parseFloat(document.getElementById('t-amount').value);
         const category = document.getElementById('t-category').value;
         const type = category === 'income' ? 'income' : 'expense';
 
