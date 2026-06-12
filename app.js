@@ -2,12 +2,11 @@
 let transactions = JSON.parse(localStorage.getItem('fb_bento_data')) || [];
 let userGoal = JSON.parse(localStorage.getItem('fb_goal_data')) || null;
 let userLimits = JSON.parse(localStorage.getItem('fb_limits_data')) || {};
-// Нова база для профілю
 let userProfile = JSON.parse(localStorage.getItem('fb_user_profile')) || { name: 'Користувач', email: 'finance@buddy.ua' };
 
 let currentChart = null; 
 
-// ================= ОНОВЛЕНІ КАТЕГОРІЇ (З ЕМОДЗІ) =================
+// ================= КАТЕГОРІЇ (З ЕМОДЗІ) =================
 const categoryConfig = {
     'income': { name: 'Дохід', icon: 'fa-arrow-down', emoji: '💰', color: 'text-emerald-500', bg: 'bg-emerald-100' },
     'products': { name: 'Продукти', icon: 'fa-shopping-cart', emoji: '🛒', color: 'text-blue-500', bg: 'bg-blue-100' },
@@ -19,8 +18,10 @@ const categoryConfig = {
     'other': { name: 'Інше', icon: 'fa-box', emoji: '📦', color: 'text-slate-500', bg: 'bg-slate-100' }
 };
 
-// РЕЄСТРУЄМО ПЛАГІН ДЛЯ ГРАФІКА
-Chart.register(ChartDataLabels);
+// РЕЄСТРУЄМО ПЛАГІН ДЛЯ ГРАФІКА (Безпечна перевірка)
+if (typeof Chart !== 'undefined') {
+    Chart.register(ChartDataLabels);
+}
 
 function formatMoney(amount) { return Math.floor(amount).toLocaleString('uk-UA'); }
 
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSidebarProfile();
     updateMobileNavigation();
     updateDesktopNavigation();
+    
     if (document.getElementById('transaction-form')) initDashboard();
     if (document.getElementById('analyticsChart')) initStatistics();
     if (document.getElementById('full-history-list')) initHistory();
@@ -41,20 +43,15 @@ function updateDesktopNavigation() {
     const path = window.location.pathname;
     const page = path.split("/").pop() || "index.html"; 
     
-    // Знаходимо навігацію в боковому меню
     const desktopNav = document.querySelector('aside.sidebar nav');
     if (!desktopNav) return;
 
-    // Перебираємо всі посилання
     const links = desktopNav.querySelectorAll('a');
     links.forEach(link => {
         const href = link.getAttribute('href');
-        
         if (href === page) {
-            // АКТИВНА кнопка (Темно-зелена)
             link.className = "flex items-center gap-4 bg-green-brand text-white px-5 py-3 rounded-2xl font-medium shadow-lg";
         } else {
-            // НЕАКТИВНА кнопка (Сіра, прозора)
             link.className = "flex items-center gap-4 px-5 py-3 rounded-2xl font-medium text-slate-500 hover:bg-slate-100 transition-colors";
         }
     });
@@ -62,24 +59,18 @@ function updateDesktopNavigation() {
 
 // Функція автоматичного підсвічування мобільного меню
 function updateMobileNavigation() {
-    // Отримуємо назву поточного файлу з URL (напр. "history.html")
     const path = window.location.pathname;
     const page = path.split("/").pop() || "index.html"; 
     
-    // Знаходимо мобільне меню
     const mobileNav = document.querySelector('nav.fixed.bottom-0');
     if (!mobileNav) return;
 
-    // Перебираємо всі посилання в меню
     const links = mobileNav.querySelectorAll('a');
     links.forEach(link => {
         const href = link.getAttribute('href');
-        
         if (href === page) {
-            // Робимо іконку АКТИВНОЮ (зеленою)
             link.className = "flex flex-col items-center p-2 text-emerald-600";
         } else {
-            // Робимо іконку НЕАКТИВНОЮ (сірою)
             link.className = "flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors";
         }
     });
@@ -99,7 +90,6 @@ function updateSidebarProfile() {
 function initDashboard() {
     updateDashboardUI();
 
-    // 1. Обробка додавання транзакцій (з новою датою та часом)
     document.getElementById('transaction-form').addEventListener('submit', function(e) {
         e.preventDefault();
         let name = document.getElementById('t-name').value;
@@ -109,7 +99,6 @@ function initDashboard() {
 
         if (!name.trim()) name = categoryConfig[category].name;
 
-        // --- НОВИЙ БЛОК ГЕНЕРАЦІЇ ДАТИ ТА ЧАСУ ---
         const now = new Date();
         const dateStr = now.toLocaleDateString('uk-UA', { day: '2-digit', month: 'short' });
         const timeStr = now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
@@ -120,9 +109,8 @@ function initDashboard() {
             amount: amount, 
             category: category, 
             type: type,
-            date: `${dateStr} о ${timeStr}` // Формат: "12 черв. о 16:15"
+            date: `${dateStr} о ${timeStr}` 
         });
-        // ----------------------------------------
         
         localStorage.setItem('fb_bento_data', JSON.stringify(transactions));
 
@@ -131,7 +119,6 @@ function initDashboard() {
         updateDashboardUI();
     });
 
-    // 2. Обробка Скарбнички (залишаємо без змін, щоб не зламалась)
     if(document.getElementById('goal-modal-form')) {
         document.getElementById('goal-modal-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -212,7 +199,7 @@ function updateDashboardUI() {
     const ring = document.getElementById('balance-ring');
     const percentText = document.getElementById('balance-percent');
     if (ring && percentText) {
-        let percent = income > 0 ? Math.max(0, Math.round(((income - expense) / income) * 100)) : 0;
+        let percent = income > 0 ? Math.max(0, Math.round(((balance) / income) * 100)) : 0;
         ring.style.strokeDashoffset = 251.2 - (percent / 100) * 251.2;
         percentText.textContent = `${percent}%`;
     }
@@ -285,7 +272,7 @@ function renderChart(timeFilter) {
 
     const catKeys = Object.keys(expensesByCat);
     const labels = catKeys.map(k => categoryConfig[k].name);
-    const emojis = catKeys.map(k => categoryConfig[k].emoji); // Отримуємо емодзі для підписів
+    const emojis = catKeys.map(k => categoryConfig[k].emoji); 
     const data = Object.values(expensesByCat);
     
     const categoryColors = {
@@ -329,18 +316,13 @@ function renderChart(timeFilter) {
                     bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12,
                     callbacks: { label: function(context) { return ` ₴${formatMoney(context.raw)}`; } }
                 },
-                // --- НОВИЙ БЛОК: НАЛАШТУВАННЯ ТЕКСТУ НА ГРАФІКУ ---
                 datalabels: {
-                    color: '#ffffff', // Білий текст
+                    color: '#ffffff',
                     font: { family: 'Inter', size: 14, weight: 'bold' },
                     formatter: (value, context) => {
-                        if (totalExpense === 0) return null; // Якщо пусто — ховаємо
-                        
+                        if (totalExpense === 0) return null; 
                         const percent = Math.round((value / totalExpense) * 100);
-                        // Якщо шматок менше 5%, ховаємо текст, щоб він не налізав на інші
                         if (percent < 5) return null; 
-                        
-                        // Повертаємо Емодзі + Відсоток
                         return `${emojis[context.dataIndex]} ${percent}%`;
                     }
                 }
@@ -348,6 +330,7 @@ function renderChart(timeFilter) {
         }
     });
 }
+
 function generateSmartAdvice(expenses, total) {
     const adviceEl = document.getElementById('smart-advice-text');
     if(!adviceEl) return;
@@ -357,7 +340,6 @@ function generateSmartAdvice(expenses, total) {
         return;
     }
 
-    // Шукаємо найбільшу категорію
     let maxCat = '';
     let maxAmount = 0;
     for(const [cat, amount] of Object.entries(expenses)) {
@@ -493,19 +475,11 @@ function renderLimits() {
     });
 }
 
-function deleteLimit(category) {
-    delete userLimits[category];
-    localStorage.setItem('fb_limits_data', JSON.stringify(userLimits));
-    renderLimits();
-}
-
 // ================= 5. НАЛАШТУВАННЯ =================
 function initSettings() {
-    // Підвантажуємо дані в форму
     document.getElementById('user-name-input').value = userProfile.name;
     document.getElementById('user-email-input').value = userProfile.email;
 
-    // Збереження профілю
     document.getElementById('profile-form').addEventListener('submit', (e) => {
         e.preventDefault();
         userProfile.name = document.getElementById('user-name-input').value;
@@ -516,12 +490,11 @@ function initSettings() {
         alert("Профіль успішно оновлено!");
     });
 
-    // Очищення даних
     const clearBtn = document.getElementById('clear-data-btn');
     if(clearBtn) {
         clearBtn.addEventListener('click', () => {
             if (confirm("УВАГА! Ви дійсно хочете видалити всі транзакції, цілі та ліміти? Цю дію неможливо скасувати.")) {
-                localStorage.clear(); // Очищає все, включаючи профіль
+                localStorage.clear(); 
                 alert("Всі дані успішно видалено. Сторінка буде перезавантажена.");
                 window.location.href = 'index.html'; 
             }
