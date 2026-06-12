@@ -91,7 +91,7 @@ function initDashboard() {
     document.getElementById('transaction-form').addEventListener('submit', function(e) {
         e.preventDefault();
         let name = document.getElementById('t-name').value;
-        const amount = parseFloat(document.getElementById('t-amount').value);
+       const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
         const category = document.getElementById('t-category').value;
         const type = category === 'income' ? 'income' : 'expense';
 
@@ -132,6 +132,7 @@ function closeGoalModal() { const m = document.getElementById('goal-modal'); if(
 
 function updateDashboardUI() {
     let income = 0; let expense = 0;
+    const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
     const list = document.getElementById('transactions-list');
     if(list) list.innerHTML = '';
     transactions.forEach(t => { if (t.type === 'income') income += t.amount; else expense += t.amount; });
