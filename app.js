@@ -23,13 +23,39 @@ function formatMoney(amount) { return Math.floor(amount).toLocaleString('uk-UA')
 
 // ================= МАРШРУТИЗАТОР =================
 document.addEventListener('DOMContentLoaded', () => {
-    updateSidebarProfile(); // Оновлюємо ім'я в меню на всіх сторінках
+    updateSidebarProfile();
+    updateMobileNavigation();
     if (document.getElementById('transaction-form')) initDashboard();
     if (document.getElementById('analyticsChart')) initStatistics();
     if (document.getElementById('full-history-list')) initHistory();
     if (document.getElementById('limits-list')) initLimits();
     if (document.getElementById('profile-form')) initSettings();
 });
+
+// Функція автоматичного підсвічування мобільного меню
+function updateMobileNavigation() {
+    // Отримуємо назву поточного файлу з URL (напр. "history.html")
+    const path = window.location.pathname;
+    const page = path.split("/").pop() || "index.html"; 
+    
+    // Знаходимо мобільне меню
+    const mobileNav = document.querySelector('nav.fixed.bottom-0');
+    if (!mobileNav) return;
+
+    // Перебираємо всі посилання в меню
+    const links = mobileNav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        
+        if (href === page) {
+            // Робимо іконку АКТИВНОЮ (зеленою)
+            link.className = "flex flex-col items-center p-2 text-emerald-600";
+        } else {
+            // Робимо іконку НЕАКТИВНОЮ (сірою)
+            link.className = "flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors";
+        }
+    });
+}
 
 // Функція оновлення імені в бічній панелі
 function updateSidebarProfile() {
