@@ -269,29 +269,28 @@ function renderChart(timeFilter) {
         // Сортуємо від найбільшої витрати до найменшої
         const sortedCats = Object.entries(expensesByCat).sort((a, b) => b[1] - a[1]);
         
-        if (sortedCats.length === 0) {
+if (sortedCats.length === 0) {
             catListEl.innerHTML = '<div class="text-center text-slate-400 py-10 text-sm">Немає витрат за цей період</div>';
         } else {
             sortedCats.forEach(([cat, amount]) => {
                 const conf = categoryConfig[cat];
                 const percent = Math.round((amount / totalExpense) * 100);
                 catListEl.innerHTML += `
-                    <div class="flex justify-between items-center mb-4 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <div class="flex justify-between items-center mb-4 p-3 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} shrink-0 text-sm"><i class="fas ${conf.icon}"></i></div>
                             <div>
-                                <p class="font-bold text-slate-800 dark:text-white text-sm">${conf.name}</p>
+                                <p class="font-bold text-slate-800 text-sm">${conf.name}</p>
                                 <p class="text-[11px] text-slate-400 font-medium">${percent}% від витрат</p>
                             </div>
                         </div>
-                        <div class="font-bold text-slate-800 dark:text-white text-sm shrink-0 ml-2">
+                        <div class="font-bold text-slate-800 text-sm shrink-0 ml-2">
                             ${CURRENCY}${formatMoney(amount)}
                         </div>
                     </div>
                 `;
             });
         }
-    }
 
     generateSmartAdvice(expensesByCat, totalExpense);
 
