@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDesktopNavigation();
     
     // Оновлюємо плейсхолдери у формах під нову валюту
-    const amountInputs = document.querySelectorAll('input[placeholder="Сума (₴)"]');
+    const amountInputs = document.querySelectorAll('input[placeholder^="Сума"]');
     amountInputs.forEach(input => input.placeholder = `Сума (${CURRENCY})`);
 
     if (document.getElementById('transaction-form')) initDashboard();
@@ -98,11 +98,16 @@ function initDashboard() {
         if (!name.trim()) name = categoryConfig[category].name;
         const now = new Date();
         transactions.unshift({
-            id: Date.now(), name: name, amount: amount, category: category, type: type,
+            id: Date.now(), 
+            name: name, 
+            amount: amount, 
+            category: category, 
+            type: type,
             date: `${now.toLocaleDateString('uk-UA', { day: '2-digit', month: 'short' })} о ${now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}` 
         });
         localStorage.setItem('fb_bento_data', JSON.stringify(transactions));
-        document.getElementById('t-name').value = ''; document.getElementById('t-amount').value = '';
+        document.getElementById('t-name').value = ''; 
+        document.getElementById('t-amount').value = '';
         updateDashboardUI();
     });
 
@@ -120,7 +125,8 @@ function initDashboard() {
                 setTimeout(() => {
                     document.getElementById('goal-modal-form').classList.remove('hidden');
                     document.getElementById('modal-success').classList.add('hidden');
-                    document.getElementById('modal-g-name').value = ''; document.getElementById('modal-g-amount').value = '';
+                    document.getElementById('modal-g-name').value = ''; 
+                    document.getElementById('modal-g-amount').value = '';
                 }, 300);
             }, 3000);
         });
@@ -132,25 +138,30 @@ function closeGoalModal() { const m = document.getElementById('goal-modal'); if(
 
 function updateDashboardUI() {
     let income = 0; let expense = 0;
-    const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
     const list = document.getElementById('transactions-list');
     if(list) list.innerHTML = '';
-    transactions.forEach(t => { if (t.type === 'income') income += t.amount; else expense += t.amount; });
+    
+    transactions.forEach(t => { 
+        if (t.type === 'income') income += t.amount; 
+        else expense += t.amount; 
+    });
 
     if(list) {
         const recentTransactions = transactions.slice(0, 3);
-        if (recentTransactions.length === 0) list.innerHTML = '<div class="text-slate-400 text-sm py-4">Немає операцій</div>';
-        else {
+        if (recentTransactions.length === 0) {
+            list.innerHTML = '<div class="text-slate-400 text-sm py-4">Немає операцій</div>';
+        } else {
             recentTransactions.forEach(t => {
                 const conf = categoryConfig[t.category];
                 const sign = t.type === 'income' ? '+' : '-';
-                const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800 dark:text-white';
+                const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
+                
                 list.innerHTML += `
-                    <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 mb-2">
+                    <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 dark:bg-slate-700 mb-2">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} text-xs"><i class="fas ${conf.icon}"></i></div>
                             <div>
-                                <div class="font-bold text-sm text-slate-800 truncate w-24">${t.name}</div>
+                                <div class="font-bold text-sm text-slate-800 dark:text-white truncate w-24">${t.name}</div>
                                 <div class="text-[10px] text-slate-400">${t.date}</div>
                             </div>
                         </div>
@@ -182,7 +193,7 @@ function updateDashboardUI() {
             goalBox.innerHTML = `
                 <div>
                     <p class="text-sm text-slate-400 mb-1">Збираємо на:</p>
-                    <h4 class="font-bold text-xl text-slate-800 truncate">${userGoal.name}</h4>
+                    <h4 class="font-bold text-xl text-slate-800 dark:text-white truncate">${userGoal.name}</h4>
                     <div class="flex justify-between items-end mt-4 mb-2">
                         <span class="text-emerald-500 font-bold text-lg">${Math.floor(goalPercent)}%</span>
                         <span class="text-sm text-slate-400">з ${CURRENCY}${formatMoney(userGoal.amount)}</span>
@@ -282,7 +293,8 @@ function initHistory() {
         filtered.forEach(t => {
             const conf = categoryConfig[t.category];
             const sign = t.type === 'income' ? '+' : '-';
-            const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800 dark:text-white';
+            const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
+            
             list.innerHTML += `
                 <div class="flex justify-between items-center p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100 group">
                     <div class="flex items-center gap-5">
@@ -377,7 +389,7 @@ function initSettings() {
         alert("Профіль успішно оновлено!");
     });
 
-    // ІНТЕРФЕЙС (НОВЕ)
+    // ІНТЕРФЕЙС
     const currencyInput = document.getElementById('user-currency-input');
     const themeInput = document.getElementById('user-theme-input');
     
