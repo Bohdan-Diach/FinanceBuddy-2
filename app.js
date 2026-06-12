@@ -1,7 +1,12 @@
+// ================= БАЗА ДАНИХ (LocalStorage) =================
 let transactions = JSON.parse(localStorage.getItem('fb_bento_data')) || [];
 let userGoal = JSON.parse(localStorage.getItem('fb_goal_data')) || null;
 let userLimits = JSON.parse(localStorage.getItem('fb_limits_data')) || {};
 
+// Глобальна змінна для графіка
+let currentChart = null; 
+
+// Налаштування категорій
 const categoryConfig = {
     'income': { name: 'Дохід', icon: 'fa-arrow-down', color: 'text-emerald-500', bg: 'bg-emerald-100' },
     'products': { name: 'Продукти', icon: 'fa-apple-alt', color: 'text-slate-700', bg: 'bg-slate-100' },
@@ -11,8 +16,12 @@ const categoryConfig = {
     'other': { name: 'Інше', icon: 'fa-box', color: 'text-slate-700', bg: 'bg-slate-100' }
 };
 
-function formatMoney(amount) { return Math.floor(amount).toLocaleString('uk-UA'); }
+// Форматування чисел
+function formatMoney(amount) { 
+    return Math.floor(amount).toLocaleString('uk-UA'); 
+}
 
+// ================= МАРШРУТИЗАТОР (Визначає, на якій ми сторінці) =================
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('transaction-form')) initDashboard();
     if (document.getElementById('analyticsChart')) initStatistics();
@@ -21,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('clear-data-btn')) initSettings();
 });
 
-/* ================= ЛОГІКА ГОЛОВНОЇ СТОРІНКИ ТА ЦІЛІ ================= */
+// ================= 1. ГОЛОВНА СТОРІНКА =================
 function initDashboard() {
     updateDashboardUI();
 
@@ -45,99 +54,101 @@ function initDashboard() {
         updateDashboardUI();
     });
 
-    // Обробка форми цілі в модальному вікні
-    document.getElementById('goal-modal-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const name = document.getElementById('modal-g-name').value;
-        const amount = parseFloat(document.getElementById('modal-g-amount').value);
-        
-        userGoal = { name, amount };
-        localStorage.setItem('fb_goal_data', JSON.stringify(userGoal));
+    if(document.getElementById('goal-modal-form')) {
+        document.getElementById('goal-modal-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('modal-g-name').value;
+            const amount = parseFloat(document.getElementById('modal-g-amount').value);
+            
+            userGoal = { name, amount };
+            localStorage.setItem('fb_goal_data', JSON.stringify(userGoal));
 
-        // Масив побажань
-        const motivations = [
-            "Чудова мета! З такою дисципліною ключі будуть твоїми швидше, ніж здається 🚗",
-            "Прекрасний вибір! Кожна відкладена гривня наближає тебе до мрії 🎯",
-            "Великі цілі вимагають маленьких кроків. Ти точно впораєшся! 🚀",
-            "Так тримати! Головне — регулярність, і результат не забариться 💼"
-        ];
-        const randomMsg = motivations[Math.floor(Math.random() * motivations.length)];
+            const motivations = [
+                "Чудова мета! З такою дисципліною все вийде 🚗",
+                "Прекрасний вибір! Кожна відкладена гривня наближає до мрії 🎯",
+                "Великі цілі вимагають маленьких кроків! 🚀"
+            ];
+            
+            document.getElementById('goal-modal-form').classList.add('hidden');
+            document.getElementById('modal-motivation-text').textContent = motivations[Math.floor(Math.random() * motivations.length)];
+            document.getElementById('modal-success').classList.remove('hidden');
 
-        // Ховаємо форму, показуємо анімацію успіху
-        document.getElementById('goal-modal-form').classList.add('hidden');
-        document.getElementById('modal-motivation-text').textContent = randomMsg;
-        document.getElementById('modal-success').classList.remove('hidden');
+            updateDashboardUI();
 
-        updateDashboardUI(); // Оновлюємо картку на фоні
-
-        // Через 3.5 секунди закриваємо модалку і повертаємо її в початковий стан
-        setTimeout(() => {
-            closeGoalModal();
             setTimeout(() => {
-                document.getElementById('goal-modal-form').classList.remove('hidden');
-                document.getElementById('modal-success').classList.add('hidden');
-                document.getElementById('modal-g-name').value = '';
-                document.getElementById('modal-g-amount').value = '';
-            }, 300);
-        }, 3500);
-    });
+                closeGoalModal();
+                setTimeout(() => {
+                    document.getElementById('goal-modal-form').classList.remove('hidden');
+                    document.getElementById('modal-success').classList.add('hidden');
+                    document.getElementById('modal-g-name').value = '';
+                    document.getElementById('modal-g-amount').value = '';
+                }, 300);
+            }, 3000);
+        });
+    }
 }
 
-// Функції відкриття/закриття модалки
 function openGoalModal() {
     const modal = document.getElementById('goal-modal');
     const card = document.getElementById('goal-modal-card');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    card.classList.add('modal-enter');
+    if(modal && card) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        card.classList.add('modal-enter');
+    }
 }
 
 function closeGoalModal() {
     const modal = document.getElementById('goal-modal');
     const card = document.getElementById('goal-modal-card');
-    card.classList.remove('modal-enter');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    if(modal && card) {
+        card.classList.remove('modal-enter');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 function updateDashboardUI() {
     let income = 0; let expense = 0;
     const list = document.getElementById('transactions-list');
-    list.innerHTML = '';
+    if(list) list.innerHTML = '';
 
     transactions.forEach(t => {
         if (t.type === 'income') income += t.amount;
         else expense += t.amount;
     });
 
-    const recentTransactions = transactions.slice(0, 3);
-    if (recentTransactions.length === 0) {
-        list.innerHTML = '<div class="text-slate-400 text-sm py-4">Немає операцій</div>';
-    } else {
-        recentTransactions.forEach(t => {
-            const conf = categoryConfig[t.category];
-            const isIncome = t.type === 'income';
-            const sign = isIncome ? '+' : '-';
-            const amountColor = isIncome ? 'text-emerald-600' : 'text-slate-800';
+    if(list) {
+        const recentTransactions = transactions.slice(0, 3);
+        if (recentTransactions.length === 0) {
+            list.innerHTML = '<div class="text-slate-400 text-sm py-4">Немає операцій</div>';
+        } else {
+            recentTransactions.forEach(t => {
+                const conf = categoryConfig[t.category];
+                const isIncome = t.type === 'income';
+                const sign = isIncome ? '+' : '-';
+                const amountColor = isIncome ? 'text-emerald-600' : 'text-slate-800';
 
-            list.innerHTML += `
-                <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 mb-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} text-xs"><i class="fas ${conf.icon}"></i></div>
-                        <div>
-                            <div class="font-bold text-sm text-slate-800 truncate w-24">${t.name}</div>
-                            <div class="text-[10px] text-slate-400">${t.date}</div>
+                list.innerHTML += `
+                    <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} text-xs"><i class="fas ${conf.icon}"></i></div>
+                            <div>
+                                <div class="font-bold text-sm text-slate-800 truncate w-24">${t.name}</div>
+                                <div class="text-[10px] text-slate-400">${t.date}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="font-bold text-sm ${amountColor}">${sign}₴${formatMoney(t.amount)}</div>
-                </div>`;
-        });
+                        <div class="font-bold text-sm ${amountColor}">${sign}₴${formatMoney(t.amount)}</div>
+                    </div>`;
+            });
+        }
     }
 
     const balance = income - expense;
-    document.getElementById('total-balance').textContent = balance >= 0 ? formatMoney(balance) : '0';
+    if(document.getElementById('total-balance')) {
+        document.getElementById('total-balance').textContent = balance >= 0 ? formatMoney(balance) : '0';
+    }
     
-    // Оновлення кільця балансу
     const ring = document.getElementById('balance-ring');
     const percentText = document.getElementById('balance-percent');
     let percent = 0;
@@ -147,48 +158,156 @@ function updateDashboardUI() {
         percentText.textContent = `${percent}%`;
     }
 
-    // Оновлення картки Цілі
     const goalBox = document.getElementById('goal-ui-content');
-    if (!userGoal) {
-        goalBox.innerHTML = `
-            <div class="text-center opacity-50">
-                <i class="fas fa-crosshairs text-3xl mb-2"></i>
-                <p class="text-sm font-medium">Ціль не встановлено</p>
-            </div>`;
-    } else {
-        const saved = balance > 0 ? balance : 0;
-        let goalPercent = (saved / userGoal.amount) * 100;
-        if (goalPercent > 100) goalPercent = 100;
-        
-        goalBox.innerHTML = `
-            <div>
-                <p class="text-sm text-slate-400 mb-1">Збираємо на:</p>
-                <h4 class="font-bold text-xl text-slate-800 truncate">${userGoal.name}</h4>
-                <div class="flex justify-between items-end mt-4 mb-2">
-                    <span class="text-emerald-500 font-bold text-lg">${Math.floor(goalPercent)}%</span>
-                    <span class="text-sm text-slate-400">з ₴${formatMoney(userGoal.amount)}</span>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-1000" style="width: ${goalPercent}%"></div>
-                </div>
-            </div>`;
+    if (goalBox) {
+        if (!userGoal) {
+            goalBox.innerHTML = `
+                <div class="text-center opacity-50">
+                    <i class="fas fa-crosshairs text-3xl mb-2"></i>
+                    <p class="text-sm font-medium">Ціль не встановлено</p>
+                </div>`;
+        } else {
+            const saved = balance > 0 ? balance : 0;
+            let goalPercent = (saved / userGoal.amount) * 100;
+            if (goalPercent > 100) goalPercent = 100;
+            
+            goalBox.innerHTML = `
+                <div>
+                    <p class="text-sm text-slate-400 mb-1">Збираємо на:</p>
+                    <h4 class="font-bold text-xl text-slate-800 truncate">${userGoal.name}</h4>
+                    <div class="flex justify-between items-end mt-4 mb-2">
+                        <span class="text-emerald-500 font-bold text-lg">${Math.floor(goalPercent)}%</span>
+                        <span class="text-sm text-slate-400">з ₴${formatMoney(userGoal.amount)}</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-1000" style="width: ${goalPercent}%"></div>
+                    </div>
+                </div>`;
+        }
     }
 }
-//... ТУТ ЗАЛИШАЄТЬСЯ ТВОЯ ЛОГІКА ДЛЯ СТАТИСТИКИ ТА ІСТОРІЇ ...
-/* ================= ЛОГІКА СТОРІНКИ СТАТИСТИКИ ================= */
-/* ================= ЛОГІКА СТОРІНКИ ІСТОРІЇ ================= */
+
+// ================= 2. СТАТИСТИКА (з графіком) =================
+function initStatistics() {
+    const buttons = document.querySelectorAll('.filter-btn');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            buttons.forEach(b => {
+                b.classList.remove('bg-emerald-500', 'shadow-lg');
+                b.classList.add('bg-white/10');
+            });
+            e.target.classList.remove('bg-white/10');
+            e.target.classList.add('bg-emerald-500', 'shadow-lg');
+
+            const filterType = e.target.getAttribute('data-filter');
+            renderChart(filterType);
+        });
+    });
+
+    renderChart('all');
+}
+
+function renderChart(timeFilter) {
+    const now = Date.now();
+    const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+    let filteredTransactions = transactions.filter(t => t.type === 'expense');
+
+    if (timeFilter === 'day') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS);
+    } else if (timeFilter === 'week') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 7);
+    } else if (timeFilter === 'month') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 30);
+    } else if (timeFilter === 'year') {
+        filteredTransactions = filteredTransactions.filter(t => (now - t.id) <= DAY_IN_MS * 365);
+    }
+
+    const expensesByCat = {};
+    let totalExpense = 0;
+
+    filteredTransactions.forEach(t => {
+        expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount;
+        totalExpense += t.amount;
+    });
+
+    document.getElementById('total-expense-stat').textContent = `₴${formatMoney(totalExpense)}`;
+
+    // Керування підказкою, якщо даних немає
+    const hintElement = document.getElementById('empty-state-hint');
+    if (totalExpense === 0) {
+        if(hintElement) hintElement.classList.remove('hidden');
+    } else {
+        if(hintElement) hintElement.classList.add('hidden');
+    }
+
+    const labels = Object.keys(expensesByCat).map(k => categoryConfig[k].name);
+    const data = Object.values(expensesByCat);
+    
+    const categoryColors = {
+        'products': '#10b981',      
+        'transport': '#ff5722',     
+        'entertainment': '#8b5cf6', 
+        'shopping': '#3b82f6',      
+        'other': '#94a3b8'          
+    };
+    const bgColors = Object.keys(expensesByCat).map(k => categoryColors[k] || '#10b981');
+
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+
+    if (currentChart) {
+        currentChart.destroy();
+    }
+
+    currentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data.length ? data : [1], // Пусте кільце, якщо немає даних
+                backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'],
+                borderWidth: 0,
+                hoverOffset: data.length ? 15 : 0
+            }]
+        },
+        options: {
+            layout: { padding: 25 }, // Щоб не обрізався низ графіка при наведенні!
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    display: data.length > 0, // Ховаємо легенду, якщо порожньо
+                    position: 'right',
+                    labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 24, usePointStyle: true, pointStyle: 'circle' }
+                },
+                tooltip: {
+                    enabled: data.length > 0, // Вимикаємо тултіпи, якщо порожньо
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 14, family: 'Inter' },
+                    bodyFont: { size: 16, family: 'Inter', weight: 'bold' },
+                    padding: 16,
+                    cornerRadius: 12,
+                    callbacks: { label: function(context) { return ` ₴${formatMoney(context.raw)}`; } }
+                }
+            }
+        }
+    });
+}
+
+// ================= 3. ІСТОРІЯ =================
 function initHistory() {
     const searchInput = document.getElementById('search-input');
     const typeButtons = document.querySelectorAll('.type-filter');
     let currentTypeFilter = 'all';
     let searchQuery = '';
 
-    // Функція рендеру списку з урахуванням фільтрів
     function renderHistory() {
         const list = document.getElementById('full-history-list');
+        if(!list) return;
         list.innerHTML = '';
 
-        // Фільтруємо масив транзакцій
         let filtered = transactions.filter(t => {
             const matchType = currentTypeFilter === 'all' || t.type === currentTypeFilter;
             const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -205,7 +324,6 @@ function initHistory() {
             return;
         }
 
-        // Відмальовуємо красиві рядки
         filtered.forEach(t => {
             const conf = categoryConfig[t.category];
             const isIncome = t.type === 'income';
@@ -226,7 +344,7 @@ function initHistory() {
                 </div>
                 <div class="flex items-center gap-6">
                     <div class="font-bold text-lg tracking-tight ${amountColor}">${sign}₴${formatMoney(t.amount)}</div>
-                    <button onclick="deleteTransaction(${t.id}); setTimeout(()=>renderHistory(), 10);" class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white">
+                    <button onclick="deleteTransaction(${t.id})" class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white">
                         <i class="fas fa-trash text-sm"></i>
                     </button>
                 </div>
@@ -235,19 +353,18 @@ function initHistory() {
         });
     }
 
-    // Слухач для живого пошуку
-    searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        renderHistory();
-    });
+    if(searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderHistory();
+        });
+    }
 
-    // Слухачі для кнопок-фільтрів (Всі / Доходи / Витрати)
     typeButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             typeButtons.forEach(b => {
-                b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800');
+                b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800', 'active');
                 b.classList.add('text-slate-400');
-                b.classList.remove('active');
             });
             e.target.classList.add('bg-white', 'shadow-sm', 'text-slate-800', 'active');
             e.target.classList.remove('text-slate-400');
@@ -257,33 +374,43 @@ function initHistory() {
         });
     });
 
-    // Перший запуск
     renderHistory();
 }
-/* ================= ЛОГІКА СТОРІНКИ ЛІМІТІВ ================= */
+
+function deleteTransaction(id) {
+    transactions = transactions.filter(t => t.id !== id);
+    localStorage.setItem('fb_bento_data', JSON.stringify(transactions));
+    
+    // Перемальовуємо той екран, де ми зараз знаходимось
+    if(document.getElementById('full-history-list')) initHistory();
+    if(document.getElementById('transaction-form')) updateDashboardUI();
+}
+
+// ================= 4. ЛІМІТИ =================
 function initLimits() {
     const form = document.getElementById('limit-form');
     
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const category = document.getElementById('l-category').value;
-        const amount = parseFloat(document.getElementById('l-amount').value);
-        
-        userLimits[category] = amount;
-        localStorage.setItem('fb_limits_data', JSON.stringify(userLimits));
-        
-        document.getElementById('l-amount').value = '';
-        renderLimits();
-    });
-
+    if(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const category = document.getElementById('l-category').value;
+            const amount = parseFloat(document.getElementById('l-amount').value);
+            
+            userLimits[category] = amount;
+            localStorage.setItem('fb_limits_data', JSON.stringify(userLimits));
+            
+            document.getElementById('l-amount').value = '';
+            renderLimits();
+        });
+    }
     renderLimits();
 }
 
 function renderLimits() {
     const list = document.getElementById('limits-list');
+    if(!list) return;
     list.innerHTML = '';
 
-    // Рахуємо витрати по кожній категорії
     const expensesByCat = {};
     transactions.forEach(t => {
         if (t.type === 'expense') {
@@ -310,14 +437,13 @@ function renderLimits() {
         let percent = (spentAmount / limitAmount) * 100;
         if (percent > 100) percent = 100;
 
-        // Зміна кольору залежно від відсотка
-        let barColor = 'bg-emerald-500'; // До 75%
+        let barColor = 'bg-emerald-500'; 
         let textColor = 'text-emerald-500';
         if (percent > 75 && percent < 100) {
-            barColor = 'bg-amber-400'; // Близько до ліміту
+            barColor = 'bg-amber-400'; 
             textColor = 'text-amber-500';
         } else if (percent >= 100) {
-            barColor = 'bg-rose-500'; // Перевищено
+            barColor = 'bg-rose-500'; 
             textColor = 'text-rose-500';
         }
 
@@ -354,20 +480,22 @@ function deleteLimit(category) {
     renderLimits();
 }
 
-/* ================= ЛОГІКА СТОРІНКИ НАЛАШТУВАНЬ ================= */
+// ================= 5. НАЛАШТУВАННЯ =================
 function initSettings() {
     const clearBtn = document.getElementById('clear-data-btn');
     
-    clearBtn.addEventListener('click', () => {
-        const isConfirmed = confirm("УВАГА! Ви дійсно хочете видалити всі транзакції, цілі та ліміти? Цю дію неможливо скасувати.");
-        
-        if (isConfirmed) {
-            localStorage.removeItem('fb_bento_data');
-            localStorage.removeItem('fb_goal_data');
-            localStorage.removeItem('fb_limits_data');
+    if(clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            const isConfirmed = confirm("УВАГА! Ви дійсно хочете видалити всі транзакції, цілі та ліміти? Цю дію неможливо скасувати.");
             
-            alert("Всі дані успішно видалено. Сторінка буде перезавантажена.");
-            window.location.href = 'index.html'; // Перекидаємо на головну
-        }
-    });
+            if (isConfirmed) {
+                localStorage.removeItem('fb_bento_data');
+                localStorage.removeItem('fb_goal_data');
+                localStorage.removeItem('fb_limits_data');
+                
+                alert("Всі дані успішно видалено.");
+                window.location.href = 'index.html'; 
+            }
+        });
+    }
 }
