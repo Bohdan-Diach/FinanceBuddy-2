@@ -205,7 +205,7 @@ function updateDashboardUI() {
         }
     }
 }
-// ================= СТАТИСТИКА =================
+// ================= 2. СТАТИСТИКА =================
 function initStatistics() {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
@@ -222,7 +222,9 @@ function initStatistics() {
 function renderChart(timeFilter) {
     const now = Date.now();
     const DAY_IN_MS = 24 * 60 * 60 * 1000;
-    let filtered = transactions.filter(t => t.type === 'expense');
+    
+    // Беремо ВСІ транзакції для періоду (і доходи, і витрати)
+    let filtered = transactions;
 
     if (timeFilter === 'day') filtered = filtered.filter(t => (now - t.id) <= DAY_IN_MS);
     else if (timeFilter === 'week') filtered = filtered.filter(t => (now - t.id) <= DAY_IN_MS * 7);
@@ -231,13 +233,69 @@ function renderChart(timeFilter) {
 
     const expensesByCat = {};
     let totalExpense = 0;
-    filtered.forEach(t => { expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount; totalExpense += t.amount; });
+    let totalIncome = 0;
 
+    // Рахуємо і доходи, і витрати
+    filtered.forEach(t => { 
+        if (t.type === 'expense') {
+            expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount; 
+            totalExpense += t.amount; 
+        } else {
+            totalIncome += t.amount;
+        }
+    });
+
+    // Оновлюємо 3 верхні міні-картки
+    if(document.getElementById('stat-period-income')) document.getElementById('stat-period-income').textContent = `+${CURRENCY}${formatMoney(totalIncome)}`;
+    if(document.getElementById('stat-period-expense')) document.getElementById('stat-period-expense').textContent = `-${CURRENCY}${formatMoney(totalExpense)}`;
+    
+    const flowEl = document.getElementById('stat-period-flow');
+    if (flowEl) {
+        const netFlow = totalIncome - totalExpense;
+        flowEl.textContent = `${netFlow > 0 ? '+' : ''}${CURRENCY}${formatMoney(netFlow)}`;
+        flowEl.className = `text-2xl font-bold ${netFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+    }
+
+    // Оновлюємо цифру на самому графіку
     document.getElementById('total-expense-stat').textContent = `${CURRENCY}${formatMoney(totalExpense)}`;
+    
     const hint = document.getElementById('empty-state-hint');
     if (totalExpense === 0) { if(hint) hint.classList.remove('hidden'); } else { if(hint) hint.classList.add('hidden'); }
+    
+    // Заповнюємо список Деталізації (справа)
+    const catListEl = document.getElementById('category-details-list');
+    if (catListEl) {
+        catListEl.innerHTML = '';
+        // Сортуємо від найбільшої витрати до найменшої
+        const sortedCats = Object.entries(expensesByCat).sort((a, b) => b[1] - a[1]);
+        
+        if (sortedCats.length === 0) {
+            catListEl.innerHTML = '<div class="text-center text-slate-400 py-10 text-sm">Немає витрат за цей період</div>';
+        } else {
+            sortedCats.forEach(([cat, amount]) => {
+                const conf = categoryConfig[cat];
+                const percent = Math.round((amount / totalExpense) * 100);
+                catListEl.innerHTML += `
+                    <div class="flex justify-between items-center mb-4 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} shrink-0 text-sm"><i class="fas ${conf.icon}"></i></div>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white text-sm">${conf.name}</p>
+                                <p class="text-[11px] text-slate-400 font-medium">${percent}% від витрат</p>
+                            </div>
+                        </div>
+                        <div class="font-bold text-slate-800 dark:text-white text-sm shrink-0 ml-2">
+                            ${CURRENCY}${formatMoney(amount)}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
+
     generateSmartAdvice(expensesByCat, totalExpense);
 
+    // Малюємо графік
     const catKeys = Object.keys(expensesByCat);
     const labels = catKeys.map(k => categoryConfig[k].name);
     const emojis = catKeys.map(k => categoryConfig[k].emoji); 
@@ -264,66 +322,13 @@ function renderChart(timeFilter) {
 function generateSmartAdvice(expenses, total) {
     const adviceEl = document.getElementById('smart-advice-text');
     if(!adviceEl) return;
-    if (total === 0) { adviceEl.innerHTML = "Поки що немає витрат за цей період. Чудовий час, щоб відкласти гроші в скарбничку! 🐷"; return; }
+    if (total === 0) { adviceEl.innerHTML = "Поки що немає витрат за цей період. Чудовий час, щоб відкласти гроші! 🐷"; return; }
     let maxCat = ''; let maxAmount = 0;
     for(const [cat, amount] of Object.entries(expenses)) { if(amount > maxAmount) { maxAmount = amount; maxCat = cat; } }
     let advice = `Найбільша категорія витрат: <strong>${categoryConfig[maxCat].name}</strong> (${CURRENCY}${formatMoney(maxAmount)}).<br><br>`;
-    const tips = { 'products': "🛒 Порада: Складання списку економить до 20% бюджету!", 'transport': "🚗 Порада: Можливо, варто розглянути проїзний або частіше гуляти?", 'utilities': "💡 Порада: Зверніть увагу на енергозберігаючі прилади.", 'clothing': "👕 Порада: 'Правило 24 годин': перед покупкою почекайте добу.", 'entertainment': "🎬 Порада: Шукайте також безкоштовні івенти у вашому місті.", 'shopping': "🛍️ Порада: Емоційні покупки — головний ворог бюджету.", 'other': "📦 Порада: Деталізуйте ці витрати, щоб краще розуміти бюджет." };
+    const tips = { 'products': "🛒 Порада: Складання списку економить до 20% бюджету!", 'transport': "🚗 Порада: Можливо, варто розглянути альтернативні маршрути або частіше гуляти?", 'utilities': "💡 Порада: Зверніть увагу на енергозберігаючі прилади.", 'clothing': "👕 Порада: 'Правило 24 годин': перед покупкою почекайте добу.", 'entertainment': "🎬 Порада: Шукайте також безкоштовні івенти у вашому місті.", 'shopping': "🛍️ Порада: Емоційні покупки — головний ворог бюджету.", 'other': "📦 Порада: Деталізуйте ці витрати, щоб краще розуміти бюджет." };
     adviceEl.innerHTML = advice + (tips[maxCat] || "Продовжуйте стежити за своїми витратами! 🌟");
 }
-
-// ================= ІСТОРІЯ =================
-function initHistory() {
-    const searchInput = document.getElementById('search-input');
-    const typeButtons = document.querySelectorAll('.type-filter');
-    let currentTypeFilter = 'all'; let searchQuery = '';
-
-    function renderHistory() {
-        const list = document.getElementById('full-history-list');
-        if(!list) return; list.innerHTML = '';
-        let filtered = transactions.filter(t => {
-            const matchType = currentTypeFilter === 'all' || t.type === currentTypeFilter;
-            const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || categoryConfig[t.category].name.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchType && matchSearch;
-        });
-
-        if (filtered.length === 0) { list.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-slate-400"><i class="fas fa-search text-4xl mb-4 opacity-50"></i><p class="font-medium">Записів не знайдено</p></div>`; return; }
-
-        filtered.forEach(t => {
-            const conf = categoryConfig[t.category];
-            const sign = t.type === 'income' ? '+' : '-';
-            const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
-            
-            list.innerHTML += `
-                <div class="flex justify-between items-center p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100 group">
-                    <div class="flex items-center gap-5">
-                        <div class="w-12 h-12 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} shadow-inner"><i class="fas ${conf.icon} text-lg"></i></div>
-                        <div>
-                            <div class="font-bold text-slate-800 text-base">${t.name}</div>
-                            <div class="text-xs text-slate-400 font-medium mt-0.5">${conf.name} • ${t.date}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-6">
-                        <div class="font-bold text-lg tracking-tight ${amountColor}">${sign}${CURRENCY}${formatMoney(t.amount)}</div>
-                        <button onclick="deleteTransaction(${t.id})" class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white"><i class="fas fa-trash text-sm"></i></button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    if(searchInput) searchInput.addEventListener('input', (e) => { searchQuery = e.target.value; renderHistory(); });
-    typeButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            typeButtons.forEach(b => { b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800', 'active'); b.classList.add('text-slate-400'); });
-            e.target.classList.add('bg-white', 'shadow-sm', 'text-slate-800', 'active'); e.target.classList.remove('text-slate-400');
-            currentTypeFilter = e.target.getAttribute('data-type'); renderHistory();
-        });
-    });
-    renderHistory();
-}
-
-function deleteTransaction(id) { transactions = transactions.filter(t => t.id !== id); localStorage.setItem('fb_bento_data', JSON.stringify(transactions)); if(document.getElementById('full-history-list')) initHistory(); if(document.getElementById('transaction-form')) updateDashboardUI(); }
-
 // ================= ЛІМІТИ =================
 function initLimits() {
     const form = document.getElementById('limit-form');
