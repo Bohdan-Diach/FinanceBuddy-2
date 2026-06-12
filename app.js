@@ -125,9 +125,9 @@ function updateDashboardUI() {
         else expense += t.amount; 
     });
 
-    // ОНОВЛЕННЯ 1: Останні операції (4 записи + Кнопка "Усі")
+    // ОНОВЛЕННЯ 1: Останні операції (Очищено від dark: класів)
     if(list) {
-        const recentTransactions = transactions.slice(0, 4); // Збільшили до 4
+        const recentTransactions = transactions.slice(0, 4);
         if (recentTransactions.length === 0) {
             list.innerHTML = '<div class="text-slate-400 text-sm py-4 h-full flex items-center justify-center">Немає операцій</div>';
         } else {
@@ -135,14 +135,14 @@ function updateDashboardUI() {
             recentTransactions.forEach(t => {
                 const conf = categoryConfig[t.category];
                 const sign = t.type === 'income' ? '+' : '-';
-                const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800 dark:text-white';
+                const amountColor = t.type === 'income' ? 'text-emerald-600' : 'text-slate-800';
                 
                 htmlStr += `
-                    <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/50">
+                    <div class="flex justify-between items-center p-2.5 rounded-xl bg-slate-50">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} text-xs shrink-0"><i class="fas ${conf.icon}"></i></div>
                             <div class="min-w-0">
-                                <div class="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[100px] sm:max-w-[120px]">${t.name}</div>
+                                <div class="font-bold text-sm text-slate-800 truncate max-w-[100px] sm:max-w-[120px]">${t.name}</div>
                                 <div class="text-[10px] text-slate-400 truncate">${t.date}</div>
                             </div>
                         </div>
@@ -151,9 +151,8 @@ function updateDashboardUI() {
             });
             htmlStr += '</div>';
             
-            // Додаємо кнопку в низ
             htmlStr += `
-                <a href="history.html" class="block w-full text-center mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-xs font-bold text-emerald-500 hover:text-emerald-600 transition-colors">
+                <a href="history.html" class="block w-full text-center mt-3 pt-3 border-t border-slate-100 text-xs font-bold text-emerald-500 hover:text-emerald-600 transition-colors">
                     Усі операції <i class="fas fa-arrow-right ml-1"></i>
                 </a>`;
             list.innerHTML = htmlStr;
@@ -173,7 +172,7 @@ function updateDashboardUI() {
         percentText.textContent = `${percent}%`;
     }
 
-    // ОНОВЛЕННЯ 2: На мрію (Додано блок "Залишилось зібрати")
+    // ОНОВЛЕННЯ 2: На мрію (Очищено від dark: класів)
     const goalBox = document.getElementById('goal-ui-content');
     if (goalBox) {
         if (!userGoal) goalBox.innerHTML = `<div class="text-center opacity-50 h-full flex flex-col items-center justify-center"><i class="fas fa-crosshairs text-3xl mb-2"></i><p class="text-sm font-medium">Ціль не встановлено</p></div>`;
@@ -182,23 +181,23 @@ function updateDashboardUI() {
             let goalPercent = Math.min((saved / userGoal.amount) * 100, 100);
             const remaining = userGoal.amount - saved;
             const remainingText = remaining > 0 ? `${CURRENCY}${formatMoney(remaining)}` : 'Ціль досягнуто! 🎉';
-            const remainingColor = remaining > 0 ? 'text-slate-800 dark:text-white' : 'text-emerald-500';
+            const remainingColor = remaining > 0 ? 'text-slate-800' : 'text-emerald-500';
 
             goalBox.innerHTML = `
                 <div class="flex flex-col h-full justify-between">
                     <div>
                         <p class="text-sm text-slate-400 mb-1">Збираємо на:</p>
-                        <h4 class="font-bold text-xl text-slate-800 dark:text-white truncate">${userGoal.name}</h4>
+                        <h4 class="font-bold text-xl text-slate-800 truncate">${userGoal.name}</h4>
                         <div class="flex justify-between items-end mt-4 mb-2">
                             <span class="text-emerald-500 font-bold text-xl">${Math.floor(goalPercent)}%</span>
                             <span class="text-xs text-slate-400 font-medium">з ${CURRENCY}${formatMoney(userGoal.amount)}</span>
                         </div>
-                        <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
                             <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full" style="width: ${goalPercent}%"></div>
                         </div>
                     </div>
                     
-                    <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl text-center border border-slate-100 dark:border-slate-700/50">
+                    <div class="mt-4 p-3 bg-slate-50 rounded-xl text-center border border-slate-100">
                         <p class="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Залишилось зібрати</p>
                         <p class="font-bold text-lg ${remainingColor}">${remainingText}</p>
                     </div>
@@ -206,7 +205,6 @@ function updateDashboardUI() {
         }
     }
 }
-
 // ================= СТАТИСТИКА =================
 function initStatistics() {
     const buttons = document.querySelectorAll('.filter-btn');
