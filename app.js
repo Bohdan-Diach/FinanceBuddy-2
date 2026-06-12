@@ -1,4 +1,5 @@
 let transactions = JSON.parse(localStorage.getItem('fb_bento_data')) || [];
+let userGoal = JSON.parse(localStorage.getItem('fb_goal_data')) || null;
 
 const categoryConfig = {
     'income': { name: 'Дохід', icon: 'fa-arrow-down', color: 'text-emerald-500', bg: 'bg-emerald-100' },
@@ -9,57 +10,95 @@ const categoryConfig = {
     'other': { name: 'Інше', icon: 'fa-box', color: 'text-slate-700', bg: 'bg-slate-100' }
 };
 
-function formatMoney(amount) {
-    return Math.floor(amount).toLocaleString('uk-UA');
-}
+function formatMoney(amount) { return Math.floor(amount).toLocaleString('uk-UA'); }
 
-// Запуск потрібних функцій залежно від сторінки
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('transaction-form')) initDashboard();
     if (document.getElementById('analyticsChart')) initStatistics();
-    // Додай цей рядок:
-    if (document.getElementById('full-history-list')) initHistory(); 
+    if (document.getElementById('full-history-list')) initHistory();
 });
 
-/* ================= ЛОГІКА ГОЛОВНОЇ СТОРІНКИ ================= */
+/* ================= ЛОГІКА ГОЛОВНОЇ СТОРІНКИ ТА ЦІЛІ ================= */
 function initDashboard() {
     updateDashboardUI();
 
     document.getElementById('transaction-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        
         let name = document.getElementById('t-name').value;
         const amount = parseFloat(document.getElementById('t-amount').value);
         const category = document.getElementById('t-category').value;
         const type = category === 'income' ? 'income' : 'expense';
 
-        // Якщо назву не ввели, беремо назву категорії
-        if (!name.trim()) {
-            name = categoryConfig[category].name;
-        }
+        if (!name.trim()) name = categoryConfig[category].name;
 
-        const newTransaction = {
-            id: Date.now(),
-            name: name,
-            amount: amount,
-            category: category,
-            type: type,
+        transactions.unshift({
+            id: Date.now(), name: name, amount: amount, category: category, type: type,
             date: new Date().toLocaleDateString('uk-UA', { day: '2-digit', month: 'short' })
-        };
-
-        transactions.unshift(newTransaction);
+        });
         localStorage.setItem('fb_bento_data', JSON.stringify(transactions));
 
         document.getElementById('t-name').value = '';
         document.getElementById('t-amount').value = '';
-        
         updateDashboardUI();
+    });
+
+    // Обробка форми цілі в модальному вікні
+    document.getElementById('goal-modal-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('modal-g-name').value;
+        const amount = parseFloat(document.getElementById('modal-g-amount').value);
+        
+        userGoal = { name, amount };
+        localStorage.setItem('fb_goal_data', JSON.stringify(userGoal));
+
+        // Масив побажань
+        const motivations = [
+            "Чудова мета! З такою дисципліною ключі будуть твоїми швидше, ніж здається 🚗",
+            "Прекрасний вибір! Кожна відкладена гривня наближає тебе до мрії 🎯",
+            "Великі цілі вимагають маленьких кроків. Ти точно впораєшся! 🚀",
+            "Так тримати! Головне — регулярність, і результат не забариться 💼"
+        ];
+        const randomMsg = motivations[Math.floor(Math.random() * motivations.length)];
+
+        // Ховаємо форму, показуємо анімацію успіху
+        document.getElementById('goal-modal-form').classList.add('hidden');
+        document.getElementById('modal-motivation-text').textContent = randomMsg;
+        document.getElementById('modal-success').classList.remove('hidden');
+
+        updateDashboardUI(); // Оновлюємо картку на фоні
+
+        // Через 3.5 секунди закриваємо модалку і повертаємо її в початковий стан
+        setTimeout(() => {
+            closeGoalModal();
+            setTimeout(() => {
+                document.getElementById('goal-modal-form').classList.remove('hidden');
+                document.getElementById('modal-success').classList.add('hidden');
+                document.getElementById('modal-g-name').value = '';
+                document.getElementById('modal-g-amount').value = '';
+            }, 300);
+        }, 3500);
     });
 }
 
+// Функції відкриття/закриття модалки
+function openGoalModal() {
+    const modal = document.getElementById('goal-modal');
+    const card = document.getElementById('goal-modal-card');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    card.classList.add('modal-enter');
+}
+
+function closeGoalModal() {
+    const modal = document.getElementById('goal-modal');
+    const card = document.getElementById('goal-modal-card');
+    card.classList.remove('modal-enter');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
 function updateDashboardUI() {
-    let income = 0;
-    let expense = 0;
+    let income = 0; let expense = 0;
     const list = document.getElementById('transactions-list');
     list.innerHTML = '';
 
@@ -68,11 +107,9 @@ function updateDashboardUI() {
         else expense += t.amount;
     });
 
-    // Виводимо тільки 4 останні транзакції на головній
-    const recentTransactions = transactions.slice(0, 4);
-
+    const recentTransactions = transactions.slice(0, 3);
     if (recentTransactions.length === 0) {
-        list.innerHTML = '<div class="text-slate-400 text-sm text-center py-4">Немає операцій</div>';
+        list.innerHTML = '<div class="text-slate-400 text-sm py-4">Немає операцій</div>';
     } else {
         recentTransactions.forEach(t => {
             const conf = categoryConfig[t.category];
@@ -80,40 +117,61 @@ function updateDashboardUI() {
             const sign = isIncome ? '+' : '-';
             const amountColor = isIncome ? 'text-emerald-600' : 'text-slate-800';
 
-            const item = document.createElement('div');
-            item.className = 'flex justify-between items-center p-2 rounded-xl bg-slate-50 mb-2';
-            item.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${conf.bg} ${conf.color}">
-                        <i class="fas ${conf.icon}"></i>
+            list.innerHTML += `
+                <div class="flex justify-between items-center p-2 rounded-xl bg-slate-50 mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center ${conf.bg} ${conf.color} text-xs"><i class="fas ${conf.icon}"></i></div>
+                        <div>
+                            <div class="font-bold text-sm text-slate-800 truncate w-24">${t.name}</div>
+                            <div class="text-[10px] text-slate-400">${t.date}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="font-bold text-sm text-slate-800">${t.name}</div>
-                        <div class="text-xs text-slate-400">${t.date}</div>
-                    </div>
-                </div>
-                <div class="font-bold text-sm ${amountColor}">${sign}₴${formatMoney(t.amount)}</div>
-            `;
-            list.appendChild(item);
+                    <div class="font-bold text-sm ${amountColor}">${sign}₴${formatMoney(t.amount)}</div>
+                </div>`;
         });
     }
 
     const balance = income - expense;
     document.getElementById('total-balance').textContent = balance >= 0 ? formatMoney(balance) : '0';
     
-    // Кільце прогресу
+    // Оновлення кільця балансу
     const ring = document.getElementById('balance-ring');
     const percentText = document.getElementById('balance-percent');
     let percent = 0;
     if (income > 0) percent = Math.max(0, Math.round(((income - expense) / income) * 100));
-    
     if (ring && percentText) {
-        const circumference = 251.2;
-        ring.style.strokeDashoffset = circumference - (percent / 100) * circumference;
+        ring.style.strokeDashoffset = 251.2 - (percent / 100) * 251.2;
         percentText.textContent = `${percent}%`;
     }
-}
 
+    // Оновлення картки Цілі
+    const goalBox = document.getElementById('goal-ui-content');
+    if (!userGoal) {
+        goalBox.innerHTML = `
+            <div class="text-center opacity-50">
+                <i class="fas fa-crosshairs text-3xl mb-2"></i>
+                <p class="text-sm font-medium">Ціль не встановлено</p>
+            </div>`;
+    } else {
+        const saved = balance > 0 ? balance : 0;
+        let goalPercent = (saved / userGoal.amount) * 100;
+        if (goalPercent > 100) goalPercent = 100;
+        
+        goalBox.innerHTML = `
+            <div>
+                <p class="text-sm text-slate-400 mb-1">Збираємо на:</p>
+                <h4 class="font-bold text-xl text-slate-800 truncate">${userGoal.name}</h4>
+                <div class="flex justify-between items-end mt-4 mb-2">
+                    <span class="text-emerald-500 font-bold text-lg">${Math.floor(goalPercent)}%</span>
+                    <span class="text-sm text-slate-400">з ₴${formatMoney(userGoal.amount)}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-1000" style="width: ${goalPercent}%"></div>
+                </div>
+            </div>`;
+    }
+}
+//... ТУТ ЗАЛИШАЄТЬСЯ ТВОЯ ЛОГІКА ДЛЯ СТАТИСТИКИ ТА ІСТОРІЇ ...
 /* ================= ЛОГІКА СТОРІНКИ СТАТИСТИКИ ================= */
 /* ================= ЛОГІКА СТОРІНКИ ІСТОРІЇ ================= */
 function initHistory() {
