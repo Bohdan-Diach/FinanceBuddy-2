@@ -96,6 +96,7 @@ function updateSidebarProfile() {
 function initDashboard() {
     updateDashboardUI();
 
+    // 1. Обробка додавання транзакцій (з новою датою та часом)
     document.getElementById('transaction-form').addEventListener('submit', function(e) {
         e.preventDefault();
         let name = document.getElementById('t-name').value;
@@ -105,10 +106,21 @@ function initDashboard() {
 
         if (!name.trim()) name = categoryConfig[category].name;
 
+        // --- НОВИЙ БЛОК ГЕНЕРАЦІЇ ДАТИ ТА ЧАСУ ---
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('uk-UA', { day: '2-digit', month: 'short' });
+        const timeStr = now.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
         transactions.unshift({
-            id: Date.now(), name: name, amount: amount, category: category, type: type,
-            date: new Date().toLocaleDateString('uk-UA', { day: '2-digit', month: 'short' })
+            id: Date.now(), 
+            name: name, 
+            amount: amount, 
+            category: category, 
+            type: type,
+            date: `${dateStr} о ${timeStr}` // Формат: "12 черв. о 16:15"
         });
+        // ----------------------------------------
+        
         localStorage.setItem('fb_bento_data', JSON.stringify(transactions));
 
         document.getElementById('t-name').value = '';
@@ -116,6 +128,7 @@ function initDashboard() {
         updateDashboardUI();
     });
 
+    // 2. Обробка Скарбнички (залишаємо без змін, щоб не зламалась)
     if(document.getElementById('goal-modal-form')) {
         document.getElementById('goal-modal-form').addEventListener('submit', function(e) {
             e.preventDefault();
