@@ -7,17 +7,20 @@ let userProfile = JSON.parse(localStorage.getItem('fb_user_profile')) || { name:
 
 let currentChart = null; 
 
-// ================= ОНОВЛЕНІ КАТЕГОРІЇ =================
+// ================= ОНОВЛЕНІ КАТЕГОРІЇ (З ЕМОДЗІ) =================
 const categoryConfig = {
-    'income': { name: 'Дохід', icon: 'fa-arrow-down', color: 'text-emerald-500', bg: 'bg-emerald-100' },
-    'products': { name: 'Продукти', icon: 'fa-shopping-cart', color: 'text-blue-500', bg: 'bg-blue-100' },
-    'transport': { name: 'Транспорт', icon: 'fa-car', color: 'text-rose-500', bg: 'bg-rose-100' },
-    'utilities': { name: 'Ком. послуги', icon: 'fa-bolt', color: 'text-amber-500', bg: 'bg-amber-100' },
-    'clothing': { name: 'Одяг', icon: 'fa-tshirt', color: 'text-pink-500', bg: 'bg-pink-100' },
-    'entertainment': { name: 'Розваги', icon: 'fa-film', color: 'text-purple-500', bg: 'bg-purple-100' },
-    'shopping': { name: 'Покупки', icon: 'fa-shopping-bag', color: 'text-indigo-500', bg: 'bg-indigo-100' },
-    'other': { name: 'Інше', icon: 'fa-box', color: 'text-slate-500', bg: 'bg-slate-100' }
+    'income': { name: 'Дохід', icon: 'fa-arrow-down', emoji: '💰', color: 'text-emerald-500', bg: 'bg-emerald-100' },
+    'products': { name: 'Продукти', icon: 'fa-shopping-cart', emoji: '🛒', color: 'text-blue-500', bg: 'bg-blue-100' },
+    'transport': { name: 'Транспорт', icon: 'fa-car', emoji: '🚗', color: 'text-rose-500', bg: 'bg-rose-100' },
+    'utilities': { name: 'Ком. послуги', icon: 'fa-bolt', emoji: '💡', color: 'text-amber-500', bg: 'bg-amber-100' },
+    'clothing': { name: 'Одяг', icon: 'fa-tshirt', emoji: '👕', color: 'text-pink-500', bg: 'bg-pink-100' },
+    'entertainment': { name: 'Розваги', icon: 'fa-film', emoji: '🎬', color: 'text-purple-500', bg: 'bg-purple-100' },
+    'shopping': { name: 'Покупки', icon: 'fa-shopping-bag', emoji: '🛍️', color: 'text-indigo-500', bg: 'bg-indigo-100' },
+    'other': { name: 'Інше', icon: 'fa-box', emoji: '📦', color: 'text-slate-500', bg: 'bg-slate-100' }
 };
+
+// РЕЄСТРУЄМО ПЛАГІН ДЛЯ ГРАФІКА
+Chart.register(ChartDataLabels);
 
 function formatMoney(amount) { return Math.floor(amount).toLocaleString('uk-UA'); }
 
@@ -278,10 +281,11 @@ function renderChart(timeFilter) {
         if(hintElement) hintElement.classList.add('hidden');
     }
 
-    // Генерація розумної поради
     generateSmartAdvice(expensesByCat, totalExpense);
 
-    const labels = Object.keys(expensesByCat).map(k => categoryConfig[k].name);
+    const catKeys = Object.keys(expensesByCat);
+    const labels = catKeys.map(k => categoryConfig[k].name);
+    const emojis = catKeys.map(k => categoryConfig[k].emoji); // Отримуємо емодзі для підписів
     const data = Object.values(expensesByCat);
     
     const categoryColors = {
@@ -293,7 +297,7 @@ function renderChart(timeFilter) {
         'shopping': '#6366f1',      
         'other': '#64748b'          
     };
-    const bgColors = Object.keys(expensesByCat).map(k => categoryColors[k] || '#10b981');
+    const bgColors = catKeys.map(k => categoryColors[k] || '#10b981');
 
     const ctx = document.getElementById('analyticsChart').getContext('2d');
     if (currentChart) currentChart.destroy();
@@ -311,19 +315,39 @@ function renderChart(timeFilter) {
         },
         options: {
             layout: { padding: 25 },
-            responsive: true, maintainAspectRatio: false, cutout: '75%',
+            responsive: true, 
+            maintainAspectRatio: false, 
+            cutout: '75%',
             plugins: {
-                legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 24, usePointStyle: true, pointStyle: 'circle' } },
+                legend: { 
+                    display: data.length > 0, 
+                    position: 'right', 
+                    labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 24, usePointStyle: true, pointStyle: 'circle' } 
+                },
                 tooltip: {
                     enabled: data.length > 0, backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' },
                     bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12,
                     callbacks: { label: function(context) { return ` ₴${formatMoney(context.raw)}`; } }
+                },
+                // --- НОВИЙ БЛОК: НАЛАШТУВАННЯ ТЕКСТУ НА ГРАФІКУ ---
+                datalabels: {
+                    color: '#ffffff', // Білий текст
+                    font: { family: 'Inter', size: 14, weight: 'bold' },
+                    formatter: (value, context) => {
+                        if (totalExpense === 0) return null; // Якщо пусто — ховаємо
+                        
+                        const percent = Math.round((value / totalExpense) * 100);
+                        // Якщо шматок менше 5%, ховаємо текст, щоб він не налізав на інші
+                        if (percent < 5) return null; 
+                        
+                        // Повертаємо Емодзі + Відсоток
+                        return `${emojis[context.dataIndex]} ${percent}%`;
+                    }
                 }
             }
         }
     });
 }
-
 function generateSmartAdvice(expenses, total) {
     const adviceEl = document.getElementById('smart-advice-text');
     if(!adviceEl) return;
