@@ -3,55 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPFinance | Статистика</title>
+    <title>Pulse | Статистика</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #e5e5e5; }
         .bento-card { border-radius: 28px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
         .sidebar { background-color: #f8f9fa; border-top-right-radius: 40px; border-bottom-right-radius: 40px; }
         .bg-green-brand { background-color: #1a2e24; }
-        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        /* Ховаємо системний скролбар для краси на мобільному */
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex min-h-screen text-slate-800 p-2 md:p-6 gap-6 pb-24 md:pb-6">
+<body class="flex min-h-screen text-slate-800 p-4 md:p-6 gap-6 pb-24 md:pb-6">
 
     <aside class="sidebar w-64 p-8 hidden lg:flex flex-col justify-between shadow-xl">
         <div>
             <div class="mb-12">
-                <h1 class="text-2xl font-bold text-slate-800 mb-8"><i class="fas fa-wallet text-emerald-600 mr-2"></i>UPFinance</h1>
+                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tighter"><i class="fas fa-wave-square text-emerald-500 mr-2"></i>Pulse<span class="text-emerald-500">.</span></h1>
             </div>
             <nav class="space-y-2">
                 <a href="index.html" class="flex items-center gap-4 px-5 py-3 rounded-2xl font-medium text-slate-500 hover:bg-slate-100 transition-colors"><i class="fas fa-home w-5 text-center"></i> Головна</a>
                 <a href="statistics.html" class="flex items-center gap-4 bg-green-brand text-white px-5 py-3 rounded-2xl font-medium shadow-lg"><i class="fas fa-chart-pie w-5 text-center"></i> Статистика</a>
                 <a href="history.html" class="flex items-center gap-4 px-5 py-3 rounded-2xl font-medium text-slate-500 hover:bg-slate-100 transition-colors"><i class="fas fa-list w-5 text-center"></i> Історія</a>
                 <a href="limits.html" class="flex items-center gap-4 px-5 py-3 rounded-2xl font-medium text-slate-500 hover:bg-slate-100 transition-colors"><i class="fas fa-shield-alt w-5 text-center"></i> Ліміти</a>
-                <a href="settings.html" class="flex items-center gap-4 px-5 py-3 rounded-2xl font-medium text-slate-500 hover:bg-slate-100 transition-colors"><i class="fas fa-cog w-5 text-center"></i> Налаштування</a>
+                <a href="settings.html" class="flex items-center gap-4 px-5 py-3 rounded-2xl font-medium text-slate-500 hover:bg-slate-100 transition-colors"><i class="fas fa-cog w-5 text-center"></i> Профіль</a>
             </nav>
         </div>
     </aside>
 
     <main class="flex-1 max-w-6xl mx-auto w-full flex flex-col gap-6">
         
+        <header class="lg:hidden mt-2 mb-2 px-2">
+            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tighter"><i class="fas fa-wave-square text-emerald-500 mr-2"></i>Pulse<span class="text-emerald-500">.</span></h1>
+            <p class="text-slate-500 text-sm font-medium mt-1">Аналітика витрат</p>
+        </header>
+
         <div class="bento-card w-full h-[500px] bg-green-brand p-8 md:p-10 text-white flex flex-col relative overflow-hidden">
-            
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 z-10">
-                <div>
-                    <h2 class="text-3xl font-bold mb-4">Аналітика витрат</h2>
-                    <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar w-full">
-                        <button class="filter-btn active bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all shadow-lg" data-filter="all">Всі</button>
-                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all" data-filter="year">Рік</button>
-                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all" data-filter="month">Місяць</button>
-                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all" data-filter="week">Тиждень</button>
-                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all" data-filter="day">День</button>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6 z-10">
+                <div class="w-full md:w-auto overflow-hidden">
+                    
+                    <div class="flex gap-3 overflow-x-auto pb-2 custom-scrollbar w-full snap-x">
+                        <button class="filter-btn active bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg shrink-0 snap-start" data-filter="all">Всі</button>
+                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 snap-start" data-filter="year">Рік</button>
+                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 snap-start" data-filter="month">Місяць</button>
+                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 snap-start" data-filter="week">Тиждень</button>
+                        <button class="filter-btn bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 snap-start" data-filter="day">День</button>
                     </div>
                 </div>
                 
-                <div class="text-left md:text-right">
+                <div class="text-left md:text-right shrink-0 mt-4 md:mt-0">
                     <p class="text-emerald-400 mb-1 font-medium text-sm">Витрати за період</p>
                     <h3 class="text-5xl font-bold tracking-tight" id="total-expense-stat">₴0</h3>
                 </div>
@@ -59,12 +63,9 @@
             
             <div class="flex-1 relative w-full flex items-center justify-center z-10">
                 <canvas id="analyticsChart"></canvas>
-                
                 <div id="empty-state-hint" class="absolute inset-0 flex flex-col items-center justify-center text-center z-20 pointer-events-none hidden">
                     <div class="bg-slate-900/60 backdrop-blur-md px-6 py-5 rounded-3xl border border-white/10 shadow-2xl">
-                        <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-magic text-3xl text-emerald-400"></i>
-                        </div>
+                        <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-magic text-3xl text-emerald-400"></i></div>
                         <h4 class="text-white font-bold text-xl">Тут поки порожньо</h4>
                         <p class="text-slate-300 text-sm mt-2">Додайте першу витрату на Головній сторінці</p>
                     </div>
@@ -75,43 +76,23 @@
 
         <div class="bento-card w-full bg-white p-8">
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-xl shrink-0">
-                    <i class="fas fa-lightbulb"></i>
-                </div>
+                <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-xl shrink-0"><i class="fas fa-lightbulb"></i></div>
                 <div>
                     <h3 class="font-bold text-lg text-slate-800 mb-2">Фінансовий помічник</h3>
-                    <p id="smart-advice-text" class="text-slate-600 font-medium text-sm leading-relaxed">
-                        Аналізуємо ваші витрати...
-                    </p>
+                    <p id="smart-advice-text" class="text-slate-600 font-medium text-sm leading-relaxed">Аналізуємо ваші витрати...</p>
                 </div>
             </div>
         </div>
-
     </main>
 
-<nav class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around items-center py-2 pb-safe lg:hidden z-50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
-        <a href="index.html" class="flex flex-col items-center p-2 text-emerald-600">
-            <i class="fas fa-home text-xl mb-1"></i>
-            <span class="text-[10px] font-medium">Головна</span>
-        </a>
-        <a href="statistics.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors">
-            <i class="fas fa-chart-pie text-xl mb-1"></i>
-            <span class="text-[10px] font-medium">Стат</span>
-        </a>
-        <a href="history.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors">
-            <i class="fas fa-list text-xl mb-1"></i>
-            <span class="text-[10px] font-medium">Історія</span>
-        </a>
-        <a href="limits.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors">
-            <i class="fas fa-shield-alt text-xl mb-1"></i>
-            <span class="text-[10px] font-medium">Ліміти</span>
-        </a>
-        <a href="settings.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors">
-            <i class="fas fa-cog text-xl mb-1"></i>
-            <span class="text-[10px] font-medium">Профіль</span>
-        </a>
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around items-center py-2 pb-safe lg:hidden z-50 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+        <a href="index.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors"><i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] font-medium">Головна</span></a>
+        <a href="statistics.html" class="flex flex-col items-center p-2 text-emerald-600"><i class="fas fa-chart-pie text-xl mb-1"></i><span class="text-[10px] font-medium">Стат</span></a>
+        <a href="history.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors"><i class="fas fa-list text-xl mb-1"></i><span class="text-[10px] font-medium">Історія</span></a>
+        <a href="limits.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors"><i class="fas fa-shield-alt text-xl mb-1"></i><span class="text-[10px] font-medium">Ліміти</span></a>
+        <a href="settings.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors"><i class="fas fa-cog text-xl mb-1"></i><span class="text-[10px] font-medium">Профіль</span></a>
     </nav>
-    
+
     <script src="app.js"></script>
 </body>
 </html>
