@@ -104,17 +104,57 @@ function checkLimitsAndAlert(category) {
 }
 
 // ================= РЕЖИМ КРИТИКА 🌶️ =================
-function showCriticReaction(amount, categoryName) {
-    const jokes = [
-        `Мінус ${CURRENCY}${formatMoney(amount)}? З такими темпами замість крутого Ford Fusion чи Passat доведеться купувати проїзний на трамвай.`,
-        `Ого, які витрати! Здається, студентський бюджет щойно зробив сальто і помер.`,
-        `Куди пішли гроші? Тільки не кажи, що знову на відкриття кейсів у CS2 або на підписку Dota Plus!`,
-        `На ${categoryName}? Серйозно? Вчити білети в автошколі було легше, ніж перестати тринькати гроші.`,
-        `Габен вже будує собі нову яхту за твої гроші, а ти все ще без заощаджень.`,
-        `Ще трохи таких імпульсивних покупок, і нам доведеться продати твої нові кросівки PUMA, щоб поїсти.`
-    ];
+let lastJoke = ""; // Пам'ятаємо минулий жарт, щоб не повторюватися
 
-    const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+function showCriticReaction(amount, categoryId, categoryName) {
+    let jokes = [];
+
+    // 1. Реакція на дуже великі витрати (пріоритет)
+    if (amount >= 3000) {
+        jokes.push(`Ого, ${CURRENCY}${formatMoney(amount)} за раз?! Твій омріяний Ford Fusion чи Passat щойно віддалився ще на рік.`);
+        jokes.push(`З такими масштабними витратами тобі доведеться писати код цілодобово, щоб це відбити.`);
+        jokes.push(`Мінус ${CURRENCY}${formatMoney(amount)}? Здається, твій бюджет щойно зробив сальто і помер.`);
+    } 
+    // 2. Реакції по конкретних категоріях
+    else {
+        switch(categoryId) {
+            case 'products':
+                jokes.push(`Знову ${CURRENCY}${formatMoney(amount)} на їжу? Майбутній айтішник має харчуватися кодом, а не тринькати бюджет!`);
+                jokes.push(`Сподіваюсь, це гречка по акції. Проїдаємо майбутню машину?`);
+                break;
+            case 'transport':
+                jokes.push(`На таксі чи маршрутку? Права отримав, а на Mazda 6 ще не назбирав... Доводиться терпіти.`);
+                jokes.push(`Може краще було пішки? І для здоров'я корисно, і ${CURRENCY}${formatMoney(amount)} в кишені б залишились.`);
+                break;
+            case 'clothing':
+                jokes.push(`Знову шмотки? Ти ж вже затарювався в PUMA, куди тобі ще?`);
+                jokes.push(`Ще одна річ у гардероб... Краще б ці гроші на депозит поклав.`);
+                break;
+            case 'entertainment':
+                jokes.push(`Розважаємось? Тільки не кажи, що це знову на кейси в CS2 або підписку Dota Plus! Габен вже будує собі яхту.`);
+                jokes.push(`Мінус ${CURRENCY}${formatMoney(amount)} на розваги. Кодити сайти на Django було б безкоштовно і корисніше!`);
+                break;
+            case 'shopping':
+                jokes.push(`Чергові покупки? Це тобі не верстку робити, тут треба фінансову архітектуру продумувати!`);
+                jokes.push(`Сховай картку, поки ми не залишилися без штанів через ці спонтанні бажання.`);
+                break;
+            case 'utilities':
+                jokes.push(`Комуналка... Ну ок, хоча б за інтернет заплатив, щоб було де ціни на AUTO.RIA моніторити.`);
+                jokes.push(`Життя доросле, нічого не скажеш. Але світло в кімнаті вимикай частіше!`);
+                break;
+            default:
+                jokes.push(`Мінус ${CURRENCY}${formatMoney(amount)} на ${categoryName}? Вчити вищу математику було б дешевше.`);
+                jokes.push(`Витратив ${CURRENCY}${formatMoney(amount)} незрозуміло на що. З такими темпами ти ще довго будеш пішоходом.`);
+        }
+    }
+
+    // Фільтруємо жарти, щоб не випав той самий, що й минулого разу
+    let availableJokes = jokes.filter(joke => joke !== lastJoke);
+    if (availableJokes.length === 0) availableJokes = jokes; // Запобіжник, якщо жарт всього один
+
+    // Випадково обираємо жарт із доступних
+    const randomJoke = availableJokes[Math.floor(Math.random() * availableJokes.length)];
+    lastJoke = randomJoke; // Запам'ятовуємо його
 
     const toast = document.getElementById('limit-alert-toast');
     const msg = document.getElementById('limit-alert-message');
@@ -135,10 +175,9 @@ function showCriticReaction(amount, categoryName) {
                 toast.classList.remove('bg-rose-900');
                 toast.classList.add('bg-slate-900', 'dark:bg-slate-800');
             }, 300);
-        }, 5000); 
+        }, 5500); 
     }
 }
-
 // ================= ГОЛОВНА =================
 function initDashboard() {
     updateDashboardUI();
@@ -160,9 +199,9 @@ function initDashboard() {
         document.getElementById('t-name').value = ''; document.getElementById('t-amount').value = '';
         updateDashboardUI();
 
-        if (type === 'expense') {
+if (type === 'expense') {
             checkLimitsAndAlert(category);
-            if (userProfile.criticMode) showCriticReaction(amount, categoryConfig[category].name);
+            if (userProfile.criticMode) showCriticReaction(amount, category, categoryConfig[category].name);
         }
     });
 
