@@ -14,16 +14,25 @@ if (userProfile.theme === 'dark') {
     document.documentElement.classList.remove('dark');
 }
 
-// ================= КАТЕГОРІЇ =================
+// ================= КАТЕГОРІЇ (ОНОВЛЕНО: ДОДАНО ТИПИ ТА НОВІ ДОХОДИ) =================
 const categoryConfig = {
-    'income': { name: 'Дохід', icon: 'fa-arrow-down', emoji: '💰', color: 'text-emerald-500', bg: 'bg-emerald-100' },
-    'products': { name: 'Продукти', icon: 'fa-shopping-cart', emoji: '🛒', color: 'text-blue-500', bg: 'bg-blue-100' },
-    'transport': { name: 'Транспорт', icon: 'fa-car', emoji: '🚗', color: 'text-rose-500', bg: 'bg-rose-100' },
-    'utilities': { name: 'Ком. послуги', icon: 'fa-bolt', emoji: '💡', color: 'text-amber-500', bg: 'bg-amber-100' },
-    'clothing': { name: 'Одяг', icon: 'fa-tshirt', emoji: '👕', color: 'text-pink-500', bg: 'bg-pink-100' },
-    'entertainment': { name: 'Розваги', icon: 'fa-film', emoji: '🎬', color: 'text-purple-500', bg: 'bg-purple-100' },
-    'shopping': { name: 'Покупки', icon: 'fa-shopping-bag', emoji: '🛍️', color: 'text-indigo-500', bg: 'bg-indigo-100' },
-    'other': { name: 'Інше', icon: 'fa-box', emoji: '📦', color: 'text-slate-500', bg: 'bg-slate-100' }
+    // Стара категорія (залишаємо, щоб старі збережені дані не зламалися)
+    'income': { name: 'Дохід', icon: 'fa-arrow-down', emoji: '💰', color: 'text-emerald-500', bg: 'bg-emerald-100', type: 'income' },
+    
+    // Нові доходи
+    'salary': { name: 'Зарплата', icon: 'fa-wallet', emoji: '💵', color: 'text-emerald-500', bg: 'bg-emerald-100', type: 'income' },
+    'freelance': { name: 'Фріланс', icon: 'fa-laptop-code', emoji: '💻', color: 'text-teal-500', bg: 'bg-teal-100', type: 'income' },
+    'gifts': { name: 'Подарунки', icon: 'fa-gift', emoji: '🎁', color: 'text-yellow-500', bg: 'bg-yellow-100', type: 'income' },
+    'cashback': { name: 'Кешбек', icon: 'fa-coins', emoji: '🪙', color: 'text-green-500', bg: 'bg-green-100', type: 'income' },
+
+    // Витрати
+    'products': { name: 'Продукти', icon: 'fa-shopping-cart', emoji: '🛒', color: 'text-blue-500', bg: 'bg-blue-100', type: 'expense' },
+    'transport': { name: 'Транспорт', icon: 'fa-car', emoji: '🚗', color: 'text-rose-500', bg: 'bg-rose-100', type: 'expense' },
+    'utilities': { name: 'Ком. послуги', icon: 'fa-bolt', emoji: '💡', color: 'text-amber-500', bg: 'bg-amber-100', type: 'expense' },
+    'clothing': { name: 'Одяг', icon: 'fa-tshirt', emoji: '👕', color: 'text-pink-500', bg: 'bg-pink-100', type: 'expense' },
+    'entertainment': { name: 'Розваги', icon: 'fa-film', emoji: '🎬', color: 'text-purple-500', bg: 'bg-purple-100', type: 'expense' },
+    'shopping': { name: 'Покупки', icon: 'fa-shopping-bag', emoji: '🛍️', color: 'text-indigo-500', bg: 'bg-indigo-100', type: 'expense' },
+    'other': { name: 'Інше', icon: 'fa-box', emoji: '📦', color: 'text-slate-500', bg: 'bg-slate-100', type: 'expense' }
 };
 
 if (typeof Chart !== 'undefined') Chart.register(ChartDataLabels);
@@ -80,7 +89,9 @@ function initDashboard() {
         let name = document.getElementById('t-name').value;
         const amount = parseFloat(document.getElementById('t-amount').value);
         const category = document.getElementById('t-category').value;
-        const type = category === 'income' ? 'income' : 'expense';
+        
+        // ОНОВЛЕННЯ: Тепер ми беремо тип транзакції прямо з конфігурації
+        const type = categoryConfig[category].type; 
         
         if (!name.trim()) name = categoryConfig[category].name;
         
@@ -288,7 +299,7 @@ function renderChart(timeFilter) {
                 `;
             });
         }
-    } // <--- ОСЬ ЦЯ ДУЖКА БУЛА ЗАГУБЛЕНА РАНІШЕ!
+    }
 
     generateSmartAdvice(expensesByCat, totalExpense);
 
