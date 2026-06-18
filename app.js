@@ -474,9 +474,10 @@ function renderChart() {
 
     const categoryColors = { 'products': '#3b82f6', 'transport': '#f43f5e', 'utilities': '#f59e0b', 'clothing': '#ec4899', 'entertainment': '#a855f7', 'shopping': '#6366f1', 'other': '#64748b' };
 
-    if (currentViewType === 'doughnut') {
+  if (currentViewType === 'doughnut') {
         const catKeys = Object.keys(expensesByCat);
         const data = Object.values(expensesByCat);
+        const emojis = catKeys.map(k => categoryConfig[k].emoji); // Збираємо смайлики з налаштувань
         const bgColors = catKeys.map(k => categoryColors[k] || '#10b981');
 
         currentChart = new Chart(ctx, {
@@ -490,11 +491,21 @@ function renderChart() {
                 plugins: {
                     legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 20, usePointStyle: true, pointStyle: 'circle' } },
                     tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
-                    datalabels: { display: false } // ПРИБИРАЄМО ЦИФРИ З КОЛА
+                    datalabels: { 
+                        display: data.length > 0,
+                        font: { size: 24 }, // Робимо смайлик великим і красивим
+                        formatter: (value, context) => { 
+                            if (totalExpense === 0) return null; 
+                            const percent = Math.round((value / totalExpense) * 100); 
+                            // Якщо шматочок менше 5%, ховаємо смайлик, щоб вони не налізали один на одного
+                            if (percent < 5) return null; 
+                            return emojis[context.dataIndex]; // Повертаємо ТІЛЬКИ смайлик
+                        } 
+                    }
                 }
             }
         });
-    } 
+    }
     else if (currentViewType === 'bar') {
         const dates = Object.keys(expensesByDate);
         const amounts = Object.values(expensesByDate);
