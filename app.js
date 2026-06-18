@@ -477,29 +477,33 @@ function renderChart() {
   if (currentViewType === 'doughnut') {
         const catKeys = Object.keys(expensesByCat);
         const data = Object.values(expensesByCat);
-        const emojis = catKeys.map(k => categoryConfig[k].emoji); // Збираємо смайлики з налаштувань
+        const emojis = catKeys.map(k => categoryConfig[k].emoji);
         const bgColors = catKeys.map(k => categoryColors[k] || '#10b981');
 
         currentChart = new Chart(ctx, {
             type: 'doughnut',
             data: { 
                 labels: catKeys.map(k => categoryConfig[k].name), 
-                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 10 : 0 }] 
+                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 5 : 0 }] // 🛠 Зменшили hoverOffset до 5
             },
             options: {
-                layout: { padding: 20 }, responsive: true, maintainAspectRatio: false, cutout: '75%',
+                layout: { padding: 40 }, // 🛠 ОСЬ ТУТ: збільшили відступи від країв (було 20)
+                responsive: true, 
+                maintainAspectRatio: false, 
+                cutout: '60%', 
                 plugins: {
                     legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 20, usePointStyle: true, pointStyle: 'circle' } },
                     tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
                     datalabels: { 
                         display: data.length > 0,
-                        font: { size: 24 }, // Робимо смайлик великим і красивим
+                        font: { size: 22 }, 
+                        anchor: 'center', 
+                        align: 'center',  
                         formatter: (value, context) => { 
                             if (totalExpense === 0) return null; 
                             const percent = Math.round((value / totalExpense) * 100); 
-                            // Якщо шматочок менше 5%, ховаємо смайлик, щоб вони не налізали один на одного
                             if (percent < 5) return null; 
-                            return emojis[context.dataIndex]; // Повертаємо ТІЛЬКИ смайлик
+                            return emojis[context.dataIndex]; 
                         } 
                     }
                 }
