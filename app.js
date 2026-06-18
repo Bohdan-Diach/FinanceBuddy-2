@@ -474,7 +474,7 @@ function renderChart() {
 
     const categoryColors = { 'products': '#3b82f6', 'transport': '#f43f5e', 'utilities': '#f59e0b', 'clothing': '#ec4899', 'entertainment': '#a855f7', 'shopping': '#6366f1', 'other': '#64748b' };
 
-  if (currentViewType === 'doughnut') {
+if (currentViewType === 'doughnut') {
         const catKeys = Object.keys(expensesByCat);
         const data = Object.values(expensesByCat);
         const emojis = catKeys.map(k => categoryConfig[k].emoji);
@@ -484,19 +484,19 @@ function renderChart() {
             type: 'doughnut',
             data: { 
                 labels: catKeys.map(k => categoryConfig[k].name), 
-                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 5 : 0 }] // 🛠 Зменшили hoverOffset до 5
+                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 5 : 0 }]
             },
             options: {
-                layout: { padding: 40 }, // 🛠 ОСЬ ТУТ: збільшили відступи від країв (було 20)
+                layout: { padding: 20 }, // Повернули стандартний відступ
                 responsive: true, 
                 maintainAspectRatio: false, 
-                cutout: '60%', 
+                cutout: '45%', // 🛠 РОБИМО БУБЛИК ТОВЩИМ (було 60%)
                 plugins: {
                     legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 20, usePointStyle: true, pointStyle: 'circle' } },
                     tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
                     datalabels: { 
                         display: data.length > 0,
-                        font: { size: 22 }, 
+                        font: { size: 18 }, // 🛠 РОБИМО СМАЙЛИКИ ТРОХИ МЕНШИМИ (було 22)
                         anchor: 'center', 
                         align: 'center',  
                         formatter: (value, context) => { 
