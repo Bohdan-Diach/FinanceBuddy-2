@@ -104,18 +104,16 @@ function checkLimitsAndAlert(category) {
 }
 
 // ================= РЕЖИМ КРИТИКА 🌶️ =================
-let lastJoke = ""; // Пам'ятаємо минулий жарт, щоб не повторюватися
+let lastJoke = ""; 
 
 function showCriticReaction(amount, categoryId, categoryName) {
     let jokes = [];
 
-    // 1. Реакція на дуже великі витрати (пріоритет)
     if (amount >= 3000) {
         jokes.push(`Ого, ${CURRENCY}${formatMoney(amount)} за раз?! Твоя мрія щойно віддалилася ще на рік.`);
         jokes.push(`З такими масштабними витратами тобі доведеться писати код цілодобово, щоб це відбити.`);
         jokes.push(`Мінус ${CURRENCY}${formatMoney(amount)}? Здається, твій бюджет щойно зробив сальто і помер.`);
     } 
-    // 2. Реакції по конкретних категоріях
     else {
         switch(categoryId) {
             case 'products':
@@ -148,13 +146,11 @@ function showCriticReaction(amount, categoryId, categoryName) {
         }
     }
 
-    // Фільтруємо жарти, щоб не випав той самий, що й минулого разу
     let availableJokes = jokes.filter(joke => joke !== lastJoke);
-    if (availableJokes.length === 0) availableJokes = jokes; // Запобіжник, якщо жарт всього один
+    if (availableJokes.length === 0) availableJokes = jokes; 
 
-    // Випадково обираємо жарт із доступних
     const randomJoke = availableJokes[Math.floor(Math.random() * availableJokes.length)];
-    lastJoke = randomJoke; // Запам'ятовуємо його
+    lastJoke = randomJoke; 
 
     const toast = document.getElementById('limit-alert-toast');
     const msg = document.getElementById('limit-alert-message');
@@ -389,7 +385,6 @@ function renderChart() {
     let filtered = transactions;
     let prevFiltered = [];
 
-    // Фільтруємо поточний і минулий періоди (для порівняння)
     if (periodMs > 0) {
         filtered = transactions.filter(t => (now - t.id) <= periodMs);
         prevFiltered = transactions.filter(t => (now - t.id) > periodMs && (now - t.id) <= periodMs * 2);
@@ -398,16 +393,13 @@ function renderChart() {
     let totalExpense = 0, totalIncome = 0;
     let prevExpense = 0, prevIncome = 0;
     const expensesByCat = {};
-    const expensesByDate = {}; // Для стовпчикового графіка
+    const expensesByDate = {}; 
 
-    // Аналіз поточного періоду
-    // Робимо копію і перевертаємо, щоб дати йшли від старіших до новіших
     [...filtered].reverse().forEach(t => { 
         if (t.type === 'expense') {
             expensesByCat[t.category] = (expensesByCat[t.category] || 0) + t.amount; 
             totalExpense += t.amount; 
             
-            // Групуємо по даті (беремо тільки "17 черв.")
             const dateStr = t.date.split(' о ')[0];
             expensesByDate[dateStr] = (expensesByDate[dateStr] || 0) + t.amount;
         } else {
@@ -415,13 +407,11 @@ function renderChart() {
         }
     });
 
-    // Аналіз минулого періоду
     prevFiltered.forEach(t => { 
         if (t.type === 'expense') prevExpense += t.amount; 
         else prevIncome += t.amount; 
     });
 
-    // 1. ОНОВЛЕННЯ ТЕКСТІВ ТА ТРЕНДІВ
     if(document.getElementById('stat-period-income')) document.getElementById('stat-period-income').textContent = `+${CURRENCY}${formatMoney(totalIncome)}`;
     if(document.getElementById('trend-income')) document.getElementById('trend-income').innerHTML = getTrendHTML(totalIncome, prevIncome, false);
 
@@ -439,7 +429,6 @@ function renderChart() {
 
     if(document.getElementById('total-expense-stat')) document.getElementById('total-expense-stat').textContent = `${CURRENCY}${formatMoney(totalExpense)}`;
 
-    // 2. ОНОВЛЕННЯ СПИСКУ ДЕТАЛІЗАЦІЇ
     const catListEl = document.getElementById('category-details-list');
     if (catListEl) {
         catListEl.innerHTML = '';
@@ -466,7 +455,6 @@ function renderChart() {
         }
     }
 
-    // 3. МАЛЮВАННЯ ГРАФІКА (Doughnut або Bar)
     const chartEl = document.getElementById('analyticsChart');
     if (!chartEl) return;
     const ctx = chartEl.getContext('2d');
@@ -474,7 +462,7 @@ function renderChart() {
 
     const categoryColors = { 'products': '#3b82f6', 'transport': '#f43f5e', 'utilities': '#f59e0b', 'clothing': '#ec4899', 'entertainment': '#a855f7', 'shopping': '#6366f1', 'other': '#64748b' };
 
-if (currentViewType === 'doughnut') {
+    if (currentViewType === 'doughnut') {
         const catKeys = Object.keys(expensesByCat);
         const data = Object.values(expensesByCat);
         const emojis = catKeys.map(k => categoryConfig[k].emoji);
@@ -484,23 +472,23 @@ if (currentViewType === 'doughnut') {
             type: 'doughnut',
             data: { 
                 labels: catKeys.map(k => categoryConfig[k].name), 
-                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: 4 }]
+                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: 4 }] 
             },
             options: {
-                layout: { padding: 10 }, // 🛠 Зменшили відступи, щоб графік був більшим
+                layout: { padding: 10 }, 
                 responsive: true, 
                 maintainAspectRatio: false, 
-                cutout: '50%', // 🛠 Оптимальна товщина кільця
+                cutout: '55%', 
                 plugins: {
                     legend: { 
                         display: data.length > 0, 
-                        position: 'bottom', // 🛠 ТЕПЕР ЗНИЗУ! Це врятує мобільну версію
-                        labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 13 }, padding: 16, usePointStyle: true, pointStyle: 'circle' } 
+                        position: 'bottom', 
+                        labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 16, usePointStyle: true, pointStyle: 'circle' } 
                     },
                     tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
                     datalabels: { 
                         display: data.length > 0,
-                        font: { size: 16 }, // 🛠 Акуратний розмір смайликів
+                        font: { size: 18 }, 
                         anchor: 'center', 
                         align: 'center',  
                         formatter: (value, context) => { 
