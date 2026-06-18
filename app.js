@@ -484,19 +484,23 @@ if (currentViewType === 'doughnut') {
             type: 'doughnut',
             data: { 
                 labels: catKeys.map(k => categoryConfig[k].name), 
-                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: data.length ? 5 : 0 }]
+                datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? bgColors : ['rgba(255, 255, 255, 0.05)'], borderWidth: 0, hoverOffset: 4 }]
             },
             options: {
-                layout: { padding: 20 }, // Повернули стандартний відступ
+                layout: { padding: 10 }, // 🛠 Зменшили відступи, щоб графік був більшим
                 responsive: true, 
                 maintainAspectRatio: false, 
-                cutout: '45%', // 🛠 РОБИМО БУБЛИК ТОВЩИМ (було 60%)
+                cutout: '50%', // 🛠 Оптимальна товщина кільця
                 plugins: {
-                    legend: { display: data.length > 0, position: 'right', labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 14 }, padding: 20, usePointStyle: true, pointStyle: 'circle' } },
+                    legend: { 
+                        display: data.length > 0, 
+                        position: 'bottom', // 🛠 ТЕПЕР ЗНИЗУ! Це врятує мобільну версію
+                        labels: { color: 'rgba(255, 255, 255, 0.8)', font: { family: 'Inter', size: 13 }, padding: 16, usePointStyle: true, pointStyle: 'circle' } 
+                    },
                     tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 16, family: 'Inter', weight: 'bold' }, padding: 16, cornerRadius: 12, callbacks: { label: function(context) { return ` ${CURRENCY}${formatMoney(context.raw)}`; } } },
                     datalabels: { 
                         display: data.length > 0,
-                        font: { size: 18 }, // 🛠 РОБИМО СМАЙЛИКИ ТРОХИ МЕНШИМИ (було 22)
+                        font: { size: 16 }, // 🛠 Акуратний розмір смайликів
                         anchor: 'center', 
                         align: 'center',  
                         formatter: (value, context) => { 
