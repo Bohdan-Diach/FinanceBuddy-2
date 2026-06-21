@@ -5,27 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayTrack. | Головна</title>
 
-
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Конфігурація Tailwind для роботи темної теми (Dark Mode)
         tailwind.config = {
             darkMode: 'class'
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #e5e5e5; }
+        
+        /* Bento-картки: заокруглення та м'які тіні */
         .bento-card { border-radius: 28px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
         .sidebar { background-color: #f8f9fa; border-top-right-radius: 40px; border-bottom-right-radius: 40px; }
+        
+        /* Фірмові кольори */
         .bg-orange-brand { background-color: #ff5722; }
         .bg-green-brand { background-color: #1a2e24; }
+        
+        /* Анімація для кільця прогресу балансу */
         .progress-ring__circle { transition: stroke-dashoffset 0.8s; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        
+        /* Анімація появи модального вікна */
         .modal-enter { animation: modalIn 0.3s ease-out forwards; }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* МАГІЯ ТЕМНОЇ ТЕМИ */
+        /* --- МАГІЯ ТЕМНОЇ ТЕМИ --- */
         html.dark body { background-color: #0f172a; color: #f8fafc; }
         html.dark .bento-card { background-color: #1e293b; color: #f8fafc; border: 1px solid #334155; box-shadow: none; }
         html.dark .bento-card h2, html.dark .bento-card h3, html.dark .bento-card h4 { color: #f8fafc; }
@@ -39,6 +47,7 @@
         html.dark .bg-white { background-color: #1e293b; }
     </style>
 </head>
+
 <body class="flex min-h-screen text-slate-800 p-4 md:p-6 gap-6 pb-24 md:pb-6">
 
     <aside class="sidebar w-64 p-8 hidden lg:flex flex-col justify-between shadow-xl">
@@ -70,6 +79,7 @@
             <div class="bento-card md:col-span-4 bg-orange-brand p-6 text-white flex flex-col justify-between items-center relative h-full">
                 <div class="w-full flex justify-between mb-2"><p class="text-sm font-medium">Доступно</p></div>
                 <h2 class="text-4xl font-bold mb-4 w-full text-left truncate" id="total-balance">₴0</h2>
+                
                 <div class="relative w-28 h-28 flex items-center justify-center">
                     <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
                         <circle class="text-white/20 stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
@@ -97,7 +107,8 @@
                 <form id="transaction-form" class="flex flex-col md:flex-row gap-4">
                     <input type="text" id="t-name" placeholder="Назва (необов'язково)" class="flex-1 bg-slate-50 py-4 px-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium">
                     <input type="number" id="t-amount" placeholder="Сума (₴)" required class="w-full md:w-40 bg-slate-50 py-4 px-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium">
-                                        <select id="t-category" class="w-full md:w-48 bg-slate-50 py-4 px-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium cursor-pointer">
+                    
+                    <select id="t-category" class="w-full md:w-48 bg-slate-50 py-4 px-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium cursor-pointer">
                         <optgroup label="Доходи">
                             <option value="salary">💵 Зарплата</option>
                             <option value="freelance">💻 Фріланс</option>
@@ -130,6 +141,7 @@
                 <h3 class="text-2xl font-bold text-slate-800">Твоя нова ціль</h3>
                 <p class="text-slate-500 text-sm mt-1">Встанови мету, і ми допоможемо її досягти!</p>
             </div>
+            
             <form id="goal-modal-form" class="space-y-4">
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">На що збираємо?</label>
@@ -141,6 +153,7 @@
                 </div>
                 <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/30 mt-2">Зберегти ціль</button>
             </form>
+            
             <div id="modal-success" class="hidden text-center py-6">
                 <div class="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center text-4xl mx-auto mb-4 animate-bounce"><i class="fas fa-check"></i></div>
                 <h4 class="text-xl font-bold text-slate-800 mb-2">Збережено!</h4>
@@ -157,16 +170,15 @@
         <a href="settings.html" class="flex flex-col items-center p-2 text-slate-400 hover:text-emerald-500 transition-colors"><i class="fas fa-cog text-xl mb-1"></i><span class="text-[10px] font-medium">Профіль</span></a>
     </nav>
 
-        <div id="limit-alert-toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/50 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-500 transform -translate-y-40 opacity-0 z-[100] w-[90%] max-w-md pointer-events-none">
+    <div id="limit-alert-toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/50 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-500 transform -translate-y-40 opacity-0 z-[100] w-[90%] max-w-md pointer-events-none">
         <div class="w-12 h-12 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center shrink-0 text-xl shadow-inner">
             <i class="fas fa-exclamation-triangle"></i>
         </div>
         <div class="flex-1">
-            <h4 class="font-bold text-sm text-slate-800 dark:text-white">Ліміт перевищено!</h4>
-            <p id="limit-alert-message" class="text-xs font-medium text-rose-500 mt-0.5">Категорія перевищила ліміт.</p>
+            <h4 class="font-bold text-sm text-slate-800 dark:text-white">Увага!</h4>
+            <p id="limit-alert-message" class="text-xs font-medium text-rose-500 mt-0.5">Системне повідомлення</p>
         </div>
     </div>
-
 
     <script src="app.js"></script>
 </body>
